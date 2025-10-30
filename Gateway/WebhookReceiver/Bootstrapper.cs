@@ -33,7 +33,7 @@
                 .Assembly
                 .GetTypes()
                 .Where(x => x.Name.EndsWith("Repository"))
-                .Where(x => !x.IsAbstract && x.IsInterface);
+                .Where(x => !x.IsAbstract && !x.IsInterface);
 
             foreach (Type? item in appRepos)
             {
