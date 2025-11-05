@@ -1,5 +1,8 @@
 
+using StackExchange.Redis;
 using WebhookReceiver;
+using WebhookReceiver.Interfaces;
+using WebhookReceiver.Managers;
 
 namespace Struct.Delivery.API
 {
@@ -9,8 +12,11 @@ namespace Struct.Delivery.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            var connectionString = builder.Configuration.GetConnectionString("REDIS_URL");
+            builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(connectionString));
+
             // Add services to the container.
-            
+
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
@@ -29,7 +35,10 @@ namespace Struct.Delivery.API
                 app.UseSwaggerUI();
             }
 
-            app.UseHttpsRedirection();
+            if (!app.Environment.IsDevelopment())
+            {
+                app.UseHttpsRedirection();
+            }
 
             app.UseAuthorization();
 

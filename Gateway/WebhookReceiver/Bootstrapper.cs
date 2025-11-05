@@ -1,4 +1,7 @@
-﻿namespace WebhookReceiver
+﻿using WebhookReceiver.Interfaces;
+using WebhookReceiver.Managers;
+
+namespace WebhookReceiver
 {
     /// <summary>
     /// Responsible for setting up lifetimes for objects within the project.
@@ -11,6 +14,9 @@
         /// <param name="services">The service collection used by the <see cref="ServiceProvider"/></param>
         public void ConfigureServices(IServiceCollection services)
         {
+
+            services.AddSingleton<IDbQueueManager, DbQueueManager>();
+
             IEnumerable<Type> appServices = GetType()
                 .Assembly
                 .GetTypes()
