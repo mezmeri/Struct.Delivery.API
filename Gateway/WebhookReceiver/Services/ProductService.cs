@@ -1,4 +1,5 @@
 ﻿using WebhookReceiver.Interfaces;
+using WebhookReceiver.Managers;
 
 namespace WebhookReceiver.Services
 {
@@ -14,6 +15,10 @@ namespace WebhookReceiver.Services
         public Task EnqueueUpdateAsync(string id)
         {
             return _queueManager.EnqueueUpdateAsync(id);
+        }
+        public Task EnqueueUpdatesAsync(IEnumerable<string> productIds)
+        {
+            return _queueManager.EnqueueUpdatesAsync(productIds);
         }
     }
 }

@@ -19,17 +19,24 @@ namespace WebhookReceiver.Controllers
         [HttpPost("productUpdate")]
         public async Task<IActionResult> ProductUpdate([FromBody] JsonElement payload)
         {
-            JsonElement productChanges = payload.GetProperty("ProductChanges");
+            var productIdsToUpdate = new List<string>();
 
-            foreach (JsonElement change in productChanges.EnumerateArray())
+            if (payload.TryGetProperty("ProductChanges", out var productChanges))
             {
-                if (change.TryGetProperty("Id", out var idElement))
+                foreach (JsonElement change in productChanges.EnumerateArray())
                 {
-                    string productId = idElement.GetInt32().ToString();
-
-                    await _productService.EnqueueUpdateAsync(productId);
+                    if (change.TryGetProperty("Id", out var idElement))
+                    {
+                        productIdsToUpdate.Add(idElement.ToString());
+                    }
                 }
             }
+
+            if (productIdsToUpdate.Any())
+            {
+                await _productService.EnqueueUpdatesAsync(productIdsToUpdate);
+            }
+
             return Accepted();
         }
     }

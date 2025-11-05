@@ -17,5 +17,17 @@ namespace WebhookReceiver.Managers
         {
             return _database.SetAddAsync(ProductUpdateQueueName, id);
         }
+
+        public Task EnqueueUpdatesAsync(IEnumerable<string> ids)
+        {
+            RedisValue[] redisValues = ids.Select(id => (RedisValue)id).ToArray();
+
+            if (redisValues.Length == 0)
+            {
+                return Task.CompletedTask; 
+            }
+
+            return _database.SetAddAsync(ProductUpdateQueueName, redisValues);
+        }
     }
 }
