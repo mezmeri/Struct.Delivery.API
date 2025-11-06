@@ -5,11 +5,9 @@ VisualStudioVersion = 17.14.36603.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebhookReceiver", "Gateway\WebhookReceiver\WebhookReceiver.csproj", "{91E51463-84FF-CE31-135D-92792A4289A4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Delivery.Application", "Delivery.Application\Delivery.Application.csproj", "{9BB118D7-6C2A-4B90-8857-1872132123C0}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Gateway", "Gateway", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Application", "Application", "{348BC082-6057-459A-BA8A-00B8808F47F0}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infrastructure", "Infrastructure", "{8F48CE68-3053-495F-B5ED-0B9EF56201D4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Domain", "Domain", "{A0B0CDFF-56B3-4006-B923-46556883F8D5}"
 EndProject
@@ -29,6 +27,10 @@ Global
 		{91E51463-84FF-CE31-135D-92792A4289A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{91E51463-84FF-CE31-135D-92792A4289A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{91E51463-84FF-CE31-135D-92792A4289A4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9BB118D7-6C2A-4B90-8857-1872132123C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9BB118D7-6C2A-4B90-8857-1872132123C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9BB118D7-6C2A-4B90-8857-1872132123C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9BB118D7-6C2A-4B90-8857-1872132123C0}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DF321463-20FE-4BF4-A1E4-1827C961700F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DF321463-20FE-4BF4-A1E4-1827C961700F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DF321463-20FE-4BF4-A1E4-1827C961700F}.Release|Any CPU.ActiveCfg = Release|Any CPU

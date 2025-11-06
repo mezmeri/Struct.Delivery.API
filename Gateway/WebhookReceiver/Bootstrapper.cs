@@ -1,5 +1,4 @@
-﻿using WebhookReceiver.Interfaces;
-using WebhookReceiver.Managers;
+﻿using Delivery.Application;
 
 namespace WebhookReceiver
 {
@@ -9,42 +8,12 @@ namespace WebhookReceiver
     public class Bootstrapper
     {
         /// <summary>
-        /// Configures all the service classes for the service provider. All services will be transient instances, meaning they will be instantiated each time they are requested. This means that services should not hold any state. 
+        /// Configures the services from the Application layer.
         /// </summary>
         /// <param name="services">The service collection used by the <see cref="ServiceProvider"/></param>
         public void ConfigureServices(IServiceCollection services)
         {
-
-            services.AddSingleton<IDbQueueManager, DbQueueManager>();
-
-            IEnumerable<Type> appServices = GetType()
-                .Assembly
-                .GetTypes()
-                .Where(x => x.Name.EndsWith("Service"))
-                .Where(x => !x.IsAbstract && !x.IsInterface);
-
-            foreach (Type? item in appServices)
-            {
-                services.AddTransient(item);
-            }
-        }
-
-        /// <summary>
-        /// Configures the lifetimes of all repositories. All repositories will be singleton, because they will be holding state.
-        /// </summary>
-        /// <param name="services"></param>
-        public void ConfigureRepositories(IServiceCollection services)
-        {
-            IEnumerable<Type> appRepos = GetType()
-                .Assembly
-                .GetTypes()
-                .Where(x => x.Name.EndsWith("Repository"))
-                .Where(x => !x.IsAbstract && !x.IsInterface);
-
-            foreach (Type? item in appRepos)
-            {
-                services.AddSingleton(item);
-            }
+            services.GetAllApplicationServices();
         }
     }
 }
