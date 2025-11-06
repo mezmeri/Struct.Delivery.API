@@ -1,4 +1,4 @@
-﻿namespace WebhookReceiver.Interfaces
+﻿namespace Application.Interfaces
 {
     public interface IDbQueueManager
     {

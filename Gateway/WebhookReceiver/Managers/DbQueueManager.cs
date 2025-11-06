@@ -1,5 +1,5 @@
 ﻿using StackExchange.Redis;
-using WebhookReceiver.Interfaces;
+using Application.Interfaces;
 
 namespace WebhookReceiver.Managers
 {

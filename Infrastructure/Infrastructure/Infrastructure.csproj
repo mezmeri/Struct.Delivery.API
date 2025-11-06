@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <Folder Include="Managers\" />
+    <Folder Include="Persistence\" />
   </ItemGroup>
 
 </Project>
