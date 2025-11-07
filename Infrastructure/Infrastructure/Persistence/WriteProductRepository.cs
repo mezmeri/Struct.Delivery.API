@@ -1,30 +1,35 @@
 ﻿using StackExchange.Redis;
-using Application.Interfaces;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Delivery.Application.Interfaces;
 
-namespace WebhookReceiver.Managers
+namespace Delivery.Infrastructure.Persistence
 {
-    public class DbQueueManager : IDbQueueManager
+    public class WriteProductRepository : IProductWriteRepository
     {
         private readonly IDatabase _database;
         private const string ProductUpdateQueueName = "products:updates:pending";
 
-        public DbQueueManager(IConnectionMultiplexer redis)
+        public WriteProductRepository(IConnectionMultiplexer redis)
         {
             _database = redis.GetDatabase();
         }
 
-        public Task EnqueueUpdateAsync(string id)
+        public Task AddToQueueAsync(string id)
         {
             return _database.SetAddAsync(ProductUpdateQueueName, id);
         }
 
-        public Task EnqueueUpdatesAsync(IEnumerable<string> ids)
+        public Task AddToQueueAsync(IEnumerable<string> ids)
         {
             RedisValue[] redisValues = ids.Select(id => (RedisValue)id).ToArray();
 
             if (redisValues.Length == 0)
             {
-                return Task.CompletedTask; 
+                return Task.CompletedTask;
             }
 
             return _database.SetAddAsync(ProductUpdateQueueName, redisValues);

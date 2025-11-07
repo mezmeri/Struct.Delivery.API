@@ -11,12 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Application\Application\Application.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Managers\" />
-    <Folder Include="Persistence\" />
+    <ProjectReference Include="..\..\Delivery.Application\Delivery.Application.csproj" />
   </ItemGroup>
 
 </Project>

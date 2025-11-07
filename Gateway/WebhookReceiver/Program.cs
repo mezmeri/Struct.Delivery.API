@@ -1,8 +1,5 @@
-
 using Delivery.Application;
 using WebhookReceiver;
-using WebhookReceiver.Interfaces;
-using WebhookReceiver.Managers;
 
 namespace Struct.Delivery.API
 {
@@ -15,6 +12,7 @@ namespace Struct.Delivery.API
             
             // Add services to the container.
             bootstrapper.ConfigureServices(builder.Services);
+            bootstrapper.ConfigureInterfaces(builder.Services);
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();

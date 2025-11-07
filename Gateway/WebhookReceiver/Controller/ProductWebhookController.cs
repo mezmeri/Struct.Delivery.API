@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
-using WebhookReceiver.Services;
+using Delivery.Application.Services;
 using Microsoft.AspNetCore.Authorization;
 
 namespace WebhookReceiver.Controllers

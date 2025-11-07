@@ -1,7 +1,6 @@
-﻿using WebhookReceiver.Interfaces;
-using WebhookReceiver.Managers;
+﻿using Delivery.Application.Interfaces;
 
-namespace WebhookReceiver.Services
+namespace Delivery.Application.Services
 {
     public class ProductService
     {
