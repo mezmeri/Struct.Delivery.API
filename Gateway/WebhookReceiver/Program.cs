@@ -12,8 +12,10 @@ namespace Struct.Delivery.API
             Bootstrapper bootstrapper = new Bootstrapper();
             
             // Add services to the container.
-            bootstrapper.ConfigureServices(builder.Services);
+            bootstrapper.ConfigureApplicationDependencies(builder.Services);
+            bootstrapper.ConfigureInfrastructureDependencies(builder.Services);
             builder.Services.AddControllers();
+            
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();

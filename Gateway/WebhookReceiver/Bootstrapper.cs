@@ -1,4 +1,4 @@
-﻿using Delivery.Application;
+﻿using Delivery.Composition;
 
 namespace WebhookReceiver
 {
@@ -11,9 +11,14 @@ namespace WebhookReceiver
         /// Configures the services from the Application layer.
         /// </summary>
         /// <param name="services">The service collection used by the <see cref="ServiceProvider"/></param>
-        public void ConfigureServices(IServiceCollection services)
+        public void ConfigureApplicationDependencies(IServiceCollection services)
         {
-            services.GetAllApplicationServices();
+            services.GetAllApplicationDependencies();
+        }
+
+        public void ConfigureInfrastructureDependencies(IServiceCollection services)
+        {
+            services.GetAllInfrastructureDependencies();
         }
     }
 }
