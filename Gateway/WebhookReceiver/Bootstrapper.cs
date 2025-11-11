@@ -20,14 +20,5 @@ namespace WebhookReceiver
         {
             return services.AddInfrastructureDependencies();
         }
-
-        /// <summary>
-        /// Configures the interfaces from the Application layer.
-        /// </summary>
-        /// <param name="interfaces">The service collection used by the <see cref="ServiceProvider"/></param>
-        public void ConfigureInterfaces(IServiceCollection services)
-        {
-            services.GetAllApplicationInterfaces();
-        }
     }
 }

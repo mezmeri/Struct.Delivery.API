@@ -14,7 +14,8 @@ namespace Delivery.Composition
         public static IServiceCollection AddInfrastructureDependencies(this IServiceCollection services)
         {
             return services.ConfigureWriteRepositories()
-                .ConfigureReadRepositories();
+                .ConfigureReadRepositories()
+                .ConfigureManagers();
         }
     }
 }

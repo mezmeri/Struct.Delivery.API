@@ -9,5 +9,11 @@ namespace Delivery.Infrastructure.Persistence.CosmoDB.Write
 {
     public class ProductWriteRepository : IProductWriteRepository
     {
+        public ProductWriteRepository() { }
+
+        public Task AddToQueueAsync(IEnumerable<string> ids)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -28,24 +28,5 @@ namespace Delivery.Application
             return services;
         }
 
-        /// <summary>
-        /// Returns all the interfaces within the application layer.
-        /// </summary>
-        /// <param name="interfaces"></param>
-        /// <returns></returns>
-        public static IServiceCollection GetAllApplicationInterfaces(this IServiceCollection services)
-        {
-            IEnumerable<Type> applicationInterfaces = Assembly.GetAssembly(typeof(ServiceRegistration))
-                .GetTypes()
-                .Where(x => x.Name.StartsWith("I"))
-                .Where(x => x.IsAbstract && x.IsInterface);
-
-            foreach (Type item in applicationInterfaces)
-            {
-                services.AddTransient(item);
-            }
-
-            return services;
-        }
     }
 }

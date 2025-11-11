@@ -8,5 +8,6 @@ namespace Delivery.Application.Interfaces.Repositories
 {
     public interface IProductWriteRepository
     {
+        Task AddToQueueAsync(IEnumerable<string> ids);
     }
 }

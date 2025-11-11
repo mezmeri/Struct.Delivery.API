@@ -2,6 +2,8 @@
 using Delivery.Infrastructure.Persistence.Redis.Write;
 using Delivery.Infrastructure.Persistence.CosmoDB.Read;
 using Delivery.Application.Interfaces.Repositories;
+using Delivery.Application.Interfaces.Managers;
+using Delivery.Infrastructure.Managers;
 
 namespace Delivery.Infrastructure
 {
@@ -23,6 +25,13 @@ namespace Delivery.Infrastructure
         public static IServiceCollection ConfigureReadRepositories(this IServiceCollection services)
         {
             services.AddSingleton<IProductReadRepository, ProductReadRepository>();
+
+            return services;
+        }
+
+        public static IServiceCollection ConfigureManagers(this IServiceCollection services)
+        {
+            services.AddSingleton<IDbQueueManager, DBQueueManager>();
 
             return services;
         }

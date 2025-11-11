@@ -1,4 +1,5 @@
-﻿using Delivery.Application.Interfaces;
+﻿using Delivery.Application.Interfaces.Managers;
+using System.Text.Json;
 
 namespace Delivery.Application.Services
 {
@@ -11,13 +12,33 @@ namespace Delivery.Application.Services
             _queueManager = queueManager;
         }
 
-        public Task EnqueueUpdateAsync(string id)
+        public async Task HandleWebhookAsync(JsonElement payload)
         {
-            return _queueManager.EnqueueUpdateAsync(id);
+            var productIds = ExtractProductIds(payload);
+            if (!productIds.Any())
+            {
+                return;
+            }
+
+            await _queueManager.EnqueueUpdatesAsync(productIds);
+
         }
-        public Task EnqueueUpdatesAsync(IEnumerable<string> productIds)
+
+        private IEnumerable<string> ExtractProductIds(JsonElement payload)
         {
-            return _queueManager.EnqueueUpdatesAsync(productIds);
+            if (payload.TryGetProperty("ProductIds", out var ids))
+            {
+                return ids.EnumerateArray().Select(id => id.ToString());
+            }
+
+            if (payload.TryGetProperty("ProductChanges", out var productChanges))
+            {
+                return productChanges.EnumerateArray()
+                    .Select(c => c.TryGetProperty("Id", out var id) ? id.ToString() : null)
+                    .OfType<string>(); 
+            }
+
+            return Enumerable.Empty<string>();
         }
     }
 }

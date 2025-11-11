@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Configuration;
+using StackExchange.Redis;
 using WebhookReceiver;
 
 namespace Struct.Delivery.API
@@ -7,6 +9,10 @@ namespace Struct.Delivery.API
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            var connectionstring = builder.Configuration.GetConnectionString("REDIS_URL");
+
+            builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(connectionstring));
 
             builder.Services.ConfigureApplicationDependencies();
             builder.Services.ConfigureInfrastructureDependencies();
