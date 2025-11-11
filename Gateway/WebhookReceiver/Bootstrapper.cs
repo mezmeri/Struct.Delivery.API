@@ -1,19 +1,24 @@
-﻿using Delivery.Application;
+﻿using Delivery.Composition;
 
 namespace WebhookReceiver
 {
     /// <summary>
     /// Responsible for setting up lifetimes for objects within the project.
     /// </summary>
-    public class Bootstrapper
+    public static class Bootstrapper
     {
         /// <summary>
         /// Configures the services from the Application layer.
         /// </summary>
         /// <param name="services">The service collection used by the <see cref="ServiceProvider"/></param>
-        public void ConfigureServices(IServiceCollection services)
+        public static IServiceCollection ConfigureApplicationDependencies(this IServiceCollection services)
         {
-            services.GetAllApplicationServices();
+            return services.AddApplicationDependencies();
+        }
+
+        public static IServiceCollection ConfigureInfrastructureDependencies(this IServiceCollection services)
+        {
+            return services.AddInfrastructureDependencies();
         }
 
         /// <summary>
