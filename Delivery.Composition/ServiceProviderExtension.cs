@@ -8,7 +8,8 @@ namespace Delivery.Composition
     {
         public static IServiceCollection AddApplicationDependencies(this IServiceCollection services)
         {
-            return services.GetAllApplicationServices();
+            return services.GetAllApplicationServices()
+                .GetAllApplicationWorkers();
         }
 
         public static IServiceCollection AddInfrastructureDependencies(this IServiceCollection services)

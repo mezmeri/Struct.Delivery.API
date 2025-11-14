@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Delivery.Infrastructure.Persistence.Redis.Write;
-using Delivery.Infrastructure.Persistence.CosmoDB.Read;
 using Delivery.Application.Interfaces.Repositories;
 using Delivery.Application.Interfaces.Managers;
 using Delivery.Infrastructure.Managers;
+using Delivery.Infrastructure.Persistence.Redis.Read;
 
 namespace Delivery.Infrastructure
 {

@@ -12,22 +12,29 @@ namespace Delivery.Infrastructure.Persistence.Redis.Write
     {
         private readonly IDatabase _database;
         private readonly string ProductUpdateQueueName = "products:updates:pending";
+        private readonly string ProductTimestamps = "products:updates:timestamps";
 
         public ProductWriteRepository(IConnectionMultiplexer redis)
         {
             _database = redis.GetDatabase();
         }
 
-        public Task AddToQueueAsync(IEnumerable<string> ids)
+        public async Task AddToQueueAsync(IEnumerable<string> ids)
         {
+            long timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+
             RedisValue[] redisValues = ids.Select(id => (RedisValue)id).ToArray();
 
             if (redisValues.Length == 0)
             {
-                return Task.CompletedTask;
+                return;
             }
 
-            return _database.SetAddAsync(ProductUpdateQueueName, redisValues);
+            await _database.SetAddAsync(ProductUpdateQueueName, redisValues);
+
+            var entries = redisValues.Select(id => new SortedSetEntry(id, timestamp)).ToArray();
+            await _database.SortedSetAddAsync(ProductTimestamps, entries);
+
         }
     }
 }
