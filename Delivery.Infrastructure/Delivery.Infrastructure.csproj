@@ -16,7 +16,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Delivery.Application\Delivery.Application.csproj" />
-    <ProjectReference Include="..\QueueWorker\Delivery.QueueWorker.csproj" />
   </ItemGroup>
 
 </Project>
