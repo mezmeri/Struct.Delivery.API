@@ -22,14 +22,19 @@ namespace Delivery.Infrastructure.Persistence.Redis.Read
             _database = redis.GetDatabase();
         }
 
-        public async Task<IEnumerable<(string, long)>> GetProductChanges(int batchSize)
+        public async Task<IEnumerable<(string, long)>> GetProductChanges(int batchSize = 100)
         {
             var result = new List<(string, long)>();
 
-            RedisValue[] items = await _database.ListRangeAsync(ProductQueueList, 0, batchSize - 1);
-
-            foreach (var item in items)
+            for (int i = 0; i < batchSize; i++)
             {
+                RedisValue item = await _database.ListLeftPopAsync(ProductQueueList);
+
+                if (!item.HasValue)
+                {
+                    break;
+                }
+
                 long timestamp = (long)(await _database.SortedSetScoreAsync(ProductTimestamps, item)).GetValueOrDefault();
                 result.Add((item, timestamp));
             }
@@ -46,13 +51,20 @@ namespace Delivery.Infrastructure.Persistence.Redis.Read
                 return;
             }
 
-            foreach (var id in redisValues)
-            {
-                await _database.ListRemoveAsync(ProductQueueList, id, 1);
-            }
-
             await _database.SetRemoveAsync(ProductUpdateQueueName, redisValues);
             await _database.SortedSetRemoveAsync(ProductTimestamps, redisValues);
+        }
+
+        public async Task RequeueIdsAsync(IEnumerable<string> ids)
+        {
+            if (!ids.Any())
+            {
+                return;
+            }
+
+            RedisValue[] redisValues = ids.Select(id => (RedisValue)id).ToArray();
+
+            await _database.ListRightPushAsync(ProductQueueList, redisValues);
         }
     }
 }

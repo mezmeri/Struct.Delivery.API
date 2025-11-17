@@ -44,16 +44,22 @@ namespace Delivery.Infrastructure.Managers
 
             IEnumerable<string> cleanIds = await _filterDirtyIdsService.FilterDirtyIds(queuedChanges);
 
-            if (!cleanIds.Any())
+            List<string> dirtyIds = queuedChanges.Select(x => x.Item1).Except(cleanIds).ToList();
+
+
+            if (dirtyIds.Any())
             {
-                return;
+                await _queueReadRepository.RequeueIdsAsync(dirtyIds);
             }
 
-            var data = await _productReadRepository.GetPimData(cleanIds);
+            if (cleanIds.Any())
+            {
+                var data = await _productReadRepository.GetPimData(cleanIds);
 
-            await _productWriteRepository.CacheUpdates(data);
+                await _productWriteRepository.CacheUpdates(data);
 
-            await _queueReadRepository.RemoveFromQueueAsync(cleanIds);
+                await _queueReadRepository.RemoveFromQueueAsync(cleanIds);
+            }
 
         }
     }
