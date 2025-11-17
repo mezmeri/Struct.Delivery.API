@@ -5,9 +5,9 @@ namespace Delivery.Application.Services
 {
     public class ProductService
     {
-        private readonly IDbQueueManager _queueManager;
+        private readonly IQueueManager _queueManager;
 
-        public ProductService(IDbQueueManager queueManager)
+        public ProductService(IQueueManager queueManager)
         {
             _queueManager = queueManager;
         }

@@ -9,29 +9,33 @@ using System.Threading.Tasks;
 
 namespace Delivery.Infrastructure.Managers
 {
-    public class DBQueueManager : IDbQueueManager
+    public class QueueManager : IQueueManager
     {
-        IProductWriteRepository _productWriterRepository;
+        IQueueWriteRepository _queueWriteRepository;
+        IQueueReadRepository _queueReadRepository;
+        IProductWriteRepository _productWriteRepository;
         IProductReadRepository _productReadRepository;
         FilterDirtyIdsService _filterDirtyIdsService;
 
-        public DBQueueManager(IProductWriteRepository productWriteRepository, IProductReadRepository productReadRepository, FilterDirtyIdsService filterDirtyIdsService) 
+        public QueueManager(IQueueWriteRepository queueWriteRepository, IQueueReadRepository queueReadRepository,IProductWriteRepository productWriteRepository, IProductReadRepository productReadRepository, FilterDirtyIdsService filterDirtyIdsService) 
         {
-            _productWriterRepository = productWriteRepository;
+            _queueWriteRepository = queueWriteRepository;
+            _queueReadRepository = queueReadRepository;
+            _productWriteRepository = productWriteRepository;
             _productReadRepository = productReadRepository;
             _filterDirtyIdsService = filterDirtyIdsService;
         }
 
         public async Task EnqueueUpdatesAsync(IEnumerable<string> ids)
         {
-            await _productWriterRepository.AddToQueueAsync(ids);
+            await _queueWriteRepository.AddToQueueAsync(ids);
 
             await ProcessQueueAsync();
         }
 
         public async Task ProcessQueueAsync()
         {
-            IEnumerable<(string, long)> queuedChanges = await _productReadRepository.GetProductChanges();
+            IEnumerable<(string, long)> queuedChanges = await _queueReadRepository.GetProductChanges(100);
 
             if (!queuedChanges.Any())
             {
@@ -47,9 +51,9 @@ namespace Delivery.Infrastructure.Managers
 
             var data = await _productReadRepository.GetPimData(cleanIds);
 
-            await _productReadRepository.CacheUpdates(data);
+            await _productWriteRepository.CacheUpdates(data);
 
-            await _productReadRepository.RemoveFromQueueAsync(cleanIds);
+            await _queueReadRepository.RemoveFromQueueAsync(cleanIds);
 
         }
     }

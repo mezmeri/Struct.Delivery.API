@@ -1,6 +1,6 @@
 ﻿namespace Delivery.Application.Interfaces.Managers
 {
-    public interface IDbQueueManager
+    public interface IQueueManager
     {
         Task EnqueueUpdatesAsync(IEnumerable<string> ids);
 

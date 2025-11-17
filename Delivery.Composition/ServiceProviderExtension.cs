@@ -9,14 +9,14 @@ namespace Delivery.Composition
         public static IServiceCollection AddApplicationDependencies(this IServiceCollection services)
         {
             return services.GetAllApplicationServices()
-                .GetAllApplicationWorkers();
+                .GetAllApplicationWorkers()
+                .ConfigureManagers();
         }
 
         public static IServiceCollection AddInfrastructureDependencies(this IServiceCollection services)
         {
             return services.ConfigureWriteRepositories()
-                .ConfigureReadRepositories()
-                .ConfigureManagers();
+                .ConfigureReadRepositories();
         }
     }
 }

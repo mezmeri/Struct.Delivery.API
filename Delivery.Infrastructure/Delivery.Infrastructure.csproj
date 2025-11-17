@@ -16,10 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Delivery.Application\Delivery.Application.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Dispatchers\" />
+    <ProjectReference Include="..\QueueWorker\Delivery.QueueWorker.csproj" />
   </ItemGroup>
 
 </Project>

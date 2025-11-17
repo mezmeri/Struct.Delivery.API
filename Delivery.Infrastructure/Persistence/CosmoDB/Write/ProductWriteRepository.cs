@@ -1,4 +1,5 @@
 ﻿using Delivery.Application.Interfaces.Repositories;
+using Struct.App.Api.Models.Product;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +13,11 @@ namespace Delivery.Infrastructure.Persistence.CosmoDB.Write
         public ProductWriteRepository() { }
 
         public Task AddToQueueAsync(IEnumerable<string> ids)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task CacheUpdates(IEnumerable<ProductModel> products)
         {
             throw new NotImplementedException();
         }

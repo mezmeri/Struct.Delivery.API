@@ -18,6 +18,7 @@ namespace Delivery.Infrastructure
             services.AddSingleton<ICategoryWriteRepository, CategoryWriteRepository>();
             services.AddSingleton<IAttributeWriteRepository, AttributeWriteRepository>();
             services.AddSingleton<IAttributeScopeWriteRepository, AttributeScopeWriteRepository>();
+            services.AddSingleton<IQueueWriteRepository, QueueWriteRepository>();
 
             return services;
         }
@@ -25,13 +26,7 @@ namespace Delivery.Infrastructure
         public static IServiceCollection ConfigureReadRepositories(this IServiceCollection services)
         {
             services.AddSingleton<IProductReadRepository, ProductReadRepository>();
-
-            return services;
-        }
-
-        public static IServiceCollection ConfigureManagers(this IServiceCollection services)
-        {
-            services.AddSingleton<IDbQueueManager, DBQueueManager>();
+            services.AddSingleton<IQueueReadRepository, QueueReadRepository>();
 
             return services;
         }

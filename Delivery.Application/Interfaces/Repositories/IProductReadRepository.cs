@@ -9,12 +9,6 @@ namespace Delivery.Application.Interfaces.Repositories
 {
     public interface IProductReadRepository
     {
-        Task<IEnumerable<(string, long)>> GetProductChanges();
-
-        Task RemoveFromQueueAsync(IEnumerable<string> ids);
-
         Task<IEnumerable<ProductModel>> GetPimData(IEnumerable<string> ids);
-
-        Task CacheUpdates(IEnumerable<ProductModel> products);
     }
 }
