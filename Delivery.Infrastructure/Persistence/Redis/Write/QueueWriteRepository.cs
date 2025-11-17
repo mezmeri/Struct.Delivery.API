@@ -46,7 +46,7 @@ namespace Delivery.Infrastructure.Persistence.Redis.Write
 
             await _database.ListLeftPushAsync(ProductQueueList, newIds.ToArray());
 
-        d}
+        }
   
     }
 }
