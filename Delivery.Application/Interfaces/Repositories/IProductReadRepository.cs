@@ -9,6 +9,6 @@ namespace Delivery.Application.Interfaces.Repositories
 {
     public interface IProductReadRepository
     {
-        Task<IEnumerable<ProductModel>> GetPimData(IEnumerable<string> ids);
+        Task<List<ProductModel>> GetPimData(List<int> ids);
     }
 }

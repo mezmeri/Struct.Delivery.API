@@ -42,6 +42,7 @@ namespace Delivery.Infrastructure.Persistence.Redis.Write
             }
 
             var entries = redisValues.Select(id => new SortedSetEntry(id, timestamp)).ToArray();
+
             await _database.SortedSetAddAsync(ProductTimestamps, entries);
 
             await _database.ListLeftPushAsync(ProductQueueList, newIds.ToArray());

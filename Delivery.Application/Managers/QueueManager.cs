@@ -11,19 +11,21 @@ namespace Delivery.Infrastructure.Managers
 {
     public class QueueManager : IQueueManager
     {
-        IQueueWriteRepository _queueWriteRepository;
-        IQueueReadRepository _queueReadRepository;
-        IProductWriteRepository _productWriteRepository;
-        IProductReadRepository _productReadRepository;
-        FilterDirtyIdsService _filterDirtyIdsService;
+        private readonly IQueueWriteRepository _queueWriteRepository;
+        private readonly IQueueReadRepository _queueReadRepository;
+        private readonly IProductWriteRepository _productWriteRepository;
+        private readonly IProductReadRepository _productReadRepository;
+        private readonly PimApiService _pimApiService;
+        private readonly FilterDirtyIdsService _filterDirtyIdsService;
 
-        public QueueManager(IQueueWriteRepository queueWriteRepository, IQueueReadRepository queueReadRepository,IProductWriteRepository productWriteRepository, IProductReadRepository productReadRepository, FilterDirtyIdsService filterDirtyIdsService) 
+        public QueueManager(IQueueWriteRepository queueWriteRepository, IQueueReadRepository queueReadRepository,IProductWriteRepository productWriteRepository, IProductReadRepository productReadRepository, FilterDirtyIdsService filterDirtyIdsService, PimApiService pimApiService) 
         {
             _queueWriteRepository = queueWriteRepository;
             _queueReadRepository = queueReadRepository;
             _productWriteRepository = productWriteRepository;
             _productReadRepository = productReadRepository;
             _filterDirtyIdsService = filterDirtyIdsService;
+            _pimApiService = pimApiService;
         }
 
         public async Task EnqueueUpdatesAsync(IEnumerable<string> ids)
@@ -54,7 +56,7 @@ namespace Delivery.Infrastructure.Managers
 
             if (cleanIds.Any())
             {
-                var data = await _productReadRepository.GetPimData(cleanIds);
+                var data = await _pimApiService.GetProductDataAsync(cleanIds);
 
                 await _productWriteRepository.CacheUpdates(data);
 

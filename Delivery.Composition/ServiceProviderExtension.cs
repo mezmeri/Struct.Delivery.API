@@ -9,7 +9,6 @@ namespace Delivery.Composition
         public static IServiceCollection AddApplicationDependencies(this IServiceCollection services)
         {
             return services.GetAllApplicationServices()
-                .GetAllApplicationWorkers()
                 .ConfigureManagers();
         }
 

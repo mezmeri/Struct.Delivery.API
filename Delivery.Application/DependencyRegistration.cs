@@ -30,26 +30,6 @@ namespace Delivery.Application
             return services;
         }
 
-        /// <summary>
-        /// Returns all the services within the application layer.
-        /// </summary>
-        /// <param name="services"></param>
-        /// <returns></returns>
-        public static IServiceCollection GetAllApplicationWorkers(this IServiceCollection services)
-        {
-            IEnumerable<Type> applicationWorkers = Assembly.GetAssembly(typeof(DependencyRegistration))
-                .GetTypes()
-                .Where(x => x.Name.EndsWith("Worker"))
-                .Where(x => !x.IsAbstract && !x.IsInterface);
-
-            foreach (Type item in applicationWorkers)
-            {
-                services.AddTransient(item);
-            }
-
-            return services;
-        }
-
         public static IServiceCollection ConfigureManagers(this IServiceCollection services)
         {
             services.AddSingleton<IQueueManager, QueueManager>();

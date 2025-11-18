@@ -1,24 +1,27 @@
-﻿using Struct.App.Api.Client;
-using Struct.App.Api.Models.Product;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Delivery.Application.Interfaces.Repositories;
+using Struct.App.Api.Models.Product;
 
 namespace Delivery.Application.Services
 {
     public class PimApiService
     {
-        private readonly StructApiClient _apiClient;
+        private readonly IProductReadRepository _productReadRepository;
 
-        public PimApiService(StructApiClient apiClient)
+        public PimApiService(IProductReadRepository productReadRepository)
         {
-            _apiClient = apiClient;
+            _productReadRepository = productReadRepository;
         }
-        public async Task<IEnumerable<ProductModel>> GetProductDataAsync(List<int> productIds)
+        public async Task<List<ProductModel>> GetProductDataAsync(IEnumerable<string> ids)
         {
-            return await _apiClient.Products.GetProductsAsync(productIds);
+            List<int> productIds = ids.Select(int.Parse).ToList();
+
+            return await _productReadRepository.GetPimData(productIds);
+
         }
     }
 }

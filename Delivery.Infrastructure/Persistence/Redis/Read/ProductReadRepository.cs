@@ -1,32 +1,30 @@
 ﻿using Delivery.Application.Interfaces.Repositories;
 using Delivery.Application.Services;
 using StackExchange.Redis;
+using Struct.App.Api.Client;
+using Struct.App.Api.Models;
+using Struct.App.Api.Models.Product;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using Struct.App.Api.Models;
-using Struct.App.Api.Models.Product;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace Delivery.Infrastructure.Persistence.Redis.Read
 {
     public class ProductReadRepository : IProductReadRepository
     {
-        private PimApiService _pimApiService;
+        private readonly StructApiClient _apiClient;
 
-        public ProductReadRepository(PimApiService pimApiService)
+        public ProductReadRepository(StructApiClient apiClient)
         {
-            _pimApiService = pimApiService;
+            _apiClient = apiClient;
         }
 
-        public async Task<IEnumerable<ProductModel>> GetPimData(IEnumerable<string> ids)
+        public async Task<List<ProductModel>> GetPimData(List<int> productIds)
         {
-            var productIds = ids.Select(id => int.TryParse(id, out var result) ? (int?)result : null).OfType<int>().ToList();
-
-            return await _pimApiService.GetProductDataAsync(productIds);
-
+            return await _apiClient.Products.GetProductsAsync(productIds);
         }
     }
 }

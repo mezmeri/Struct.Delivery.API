@@ -12,11 +12,6 @@ namespace Delivery.Infrastructure.Persistence.CosmoDB.Write
     {
         public ProductWriteRepository() { }
 
-        public Task AddToQueueAsync(IEnumerable<string> ids)
-        {
-            throw new NotImplementedException();
-        }
-
         public Task CacheUpdates(IEnumerable<ProductModel> products)
         {
             throw new NotImplementedException();
