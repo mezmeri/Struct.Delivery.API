@@ -11,6 +11,8 @@ namespace WebhookReceiver.Controllers
     {
         private readonly ProductService _productService;
 
+
+        // Remove this?? We cant :-( need to assign productService with Constructor! Tænker bare det er noget der er overset 
         public ProductWebhookController(ProductService productService)
         {
             _productService = productService;
