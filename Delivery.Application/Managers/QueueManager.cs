@@ -51,7 +51,7 @@ namespace Delivery.Infrastructure.Managers
 
             if (dirtyIds.Any())
             {
-                await _queueReadRepository.RequeueIdsAsync(dirtyIds);
+                await _queueWriteRepository.RequeueIdsAsync(dirtyIds);
             }
 
             if (cleanIds.Any())
@@ -60,7 +60,7 @@ namespace Delivery.Infrastructure.Managers
 
                 await _productWriteRepository.CacheUpdates(data);
 
-                await _queueReadRepository.RemoveFromQueueAsync(cleanIds);
+                await _queueWriteRepository.RemoveFromQueueAsync(cleanIds);
             }
 
         }

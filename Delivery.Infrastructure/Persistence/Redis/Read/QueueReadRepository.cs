@@ -42,29 +42,5 @@ namespace Delivery.Infrastructure.Persistence.Redis.Read
             return result;
         }
 
-        public async Task RemoveFromQueueAsync(IEnumerable<string> ids)
-        {
-            RedisValue[] redisValues = ids.Select(id => (RedisValue)id).ToArray();
-
-            if (redisValues.Length == 0)
-            {
-                return;
-            }
-
-            await _database.SetRemoveAsync(ProductUpdateQueueName, redisValues);
-            await _database.SortedSetRemoveAsync(ProductTimestamps, redisValues);
-        }
-
-        public async Task RequeueIdsAsync(IEnumerable<string> ids)
-        {
-            if (!ids.Any())
-            {
-                return;
-            }
-
-            RedisValue[] redisValues = ids.Select(id => (RedisValue)id).ToArray();
-
-            await _database.ListRightPushAsync(ProductQueueList, redisValues);
-        }
     }
 }

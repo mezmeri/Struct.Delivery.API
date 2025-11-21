@@ -9,7 +9,6 @@ namespace Delivery.Application.Interfaces.Repositories
     public interface IQueueReadRepository
     {
         Task<IEnumerable<(string, long)>> GetProductChanges(int batchSize);
-        Task RemoveFromQueueAsync(IEnumerable<string> ids);
-        Task RequeueIdsAsync(IEnumerable<string> ids);
+
     }
 }
