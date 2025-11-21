@@ -19,18 +19,44 @@ namespace Delivery.QueueWorker
 
 
         public QueueWorker(IQueueReadRepository queueReadRepository, IProductWriteRepository productWriteRepository, FilterDirtyIdsService filterDirtyIdsService, PimApiService pimApiService)
-        
+
         {
             _queueReadRepository = queueReadRepository;
             _productWriteRepository = productWriteRepository;
             _filterDirtyIdsService = filterDirtyIdsService;
             _pimApiService = pimApiService;
 
-            
+
         }
 
 
-        public async Task ProcessQueueAsync() { 
-        } //TO BE IMPLEMENTED
+        public async Task ProcessQueueAsync()
+        {
+            IEnumerable<(string, long)> queuedChanges = await _queueReadRepository.GetProductChanges(100);
+
+            if (!queuedChanges.Any())
+            {
+                return;
+            }
+
+            IEnumerable<string> cleanIds = await _filterDirtyIdsService.FilterDirtyIds(queuedChanges);
+
+            List<string> dirtyIds = queuedChanges.Select(x => x.Item1).Except(cleanIds).ToList();
+
+
+            if (dirtyIds.Any())
+            {
+                await _queueReadRepository.RequeueIdsAsync(dirtyIds);
+            }
+
+            if (cleanIds.Any())
+            {
+                var data = await _pimApiService.GetProductDataAsync(cleanIds);
+
+                await _productWriteRepository.CacheUpdates(data);
+
+                await _queueReadRepository.RemoveFromQueueAsync(cleanIds);
+            }
+        }
     }
 }
