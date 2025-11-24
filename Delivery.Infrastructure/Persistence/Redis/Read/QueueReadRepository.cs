@@ -13,7 +13,6 @@ namespace Delivery.Infrastructure.Persistence.Redis.Read
     public class QueueReadRepository : IQueueReadRepository
     {
         private readonly IDatabase _database;
-        private readonly string ProductUpdateQueueName = "products:updates:pending";
         private readonly string ProductTimestamps = "products:updates:timestamps";
         private readonly string ProductQueueList = "products:updates:list";
 

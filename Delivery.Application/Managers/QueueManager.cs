@@ -60,7 +60,9 @@ namespace Delivery.Infrastructure.Managers
 
                 await _productWriteRepository.CacheUpdates(data);
 
-                await _queueWriteRepository.RemoveFromQueueAsync(cleanIds);
+                IEnumerable<(string, long)> cleanWithTimestamps = queuedChanges.Where(q => cleanIds.Contains(q.Item1)).Select(q => (q.Item1, q.Item2));
+
+                await _queueWriteRepository.RemoveFromQueueAsync(cleanWithTimestamps);
             }
 
         }
