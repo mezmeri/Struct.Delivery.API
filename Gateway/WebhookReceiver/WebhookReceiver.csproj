@@ -4,13 +4,18 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>458f1428-909e-47cc-b9a0-ddc00ec9c2c4</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="StackExchange.Redis" Version="2.9.32" />
+    <PackageReference Include="Struct.App.Api.Client" Version="4.0.9" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Delivery.Composition\Delivery.Composition.csproj" />
     <ProjectReference Include="..\..\Delivery.Application\Delivery.Application.csproj" />
     <ProjectReference Include="..\..\Delivery.Composition\Delivery.Composition.csproj" />
   </ItemGroup>

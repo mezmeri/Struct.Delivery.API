@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Struct.App.Api.Models.Product;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,5 +9,6 @@ namespace Delivery.Application.Interfaces.Repositories
 {
     public interface IProductReadRepository
     {
+        Task<List<ProductModel>> GetPimData(List<int> ids);
     }
 }

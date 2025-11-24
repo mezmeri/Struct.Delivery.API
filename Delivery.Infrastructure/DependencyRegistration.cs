@@ -1,7 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Delivery.Infrastructure.Persistence.Redis.Write;
-using Delivery.Infrastructure.Persistence.CosmoDB.Read;
 using Delivery.Application.Interfaces.Repositories;
+using Delivery.Application.Interfaces.Managers;
+using Delivery.Infrastructure.Managers;
+using Delivery.Infrastructure.Persistence.Redis.Read;
 
 namespace Delivery.Infrastructure
 {
@@ -16,6 +18,7 @@ namespace Delivery.Infrastructure
             services.AddSingleton<ICategoryWriteRepository, CategoryWriteRepository>();
             services.AddSingleton<IAttributeWriteRepository, AttributeWriteRepository>();
             services.AddSingleton<IAttributeScopeWriteRepository, AttributeScopeWriteRepository>();
+            services.AddSingleton<IQueueWriteRepository, QueueWriteRepository>();
 
             return services;
         }
@@ -23,6 +26,7 @@ namespace Delivery.Infrastructure
         public static IServiceCollection ConfigureReadRepositories(this IServiceCollection services)
         {
             services.AddSingleton<IProductReadRepository, ProductReadRepository>();
+            services.AddSingleton<IQueueReadRepository, QueueReadRepository>();
 
             return services;
         }

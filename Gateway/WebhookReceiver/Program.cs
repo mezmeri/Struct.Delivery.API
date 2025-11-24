@@ -1,3 +1,6 @@
+using Microsoft.Extensions.Configuration;
+using StackExchange.Redis;
+using Struct.App.Api.Client;
 using Microsoft.Extensions.Logging;
 using WebhookReceiver;
 
@@ -8,6 +11,20 @@ namespace Struct.Delivery.API
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            var connectionstring = builder.Configuration.GetConnectionString("REDIS_URL");
+
+            var baseUrl = builder.Configuration["StructApi:BaseUrl"];
+            var apiKey = builder.Configuration["StructApi:ApiKey"];
+
+            var structApiClient = new StructApiClient(baseUrl, apiKey);
+
+
+            builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(connectionstring));
+            builder.Services.AddSingleton(structApiClient);
+
+            builder.Services.ConfigureApplicationDependencies();
+            builder.Services.ConfigureInfrastructureDependencies();
 
             // Add services to the container.
             builder.Services.AddControllers();
