@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Delivery.Application.Interfaces.Managers;
+using Delivery.Infrastructure.Managers;
+using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 
 namespace Delivery.Application
@@ -26,6 +28,14 @@ namespace Delivery.Application
             }
 
             return services;
-        } 
+        }
+
+        public static IServiceCollection ConfigureManagers(this IServiceCollection services)
+        {
+            services.AddSingleton<IQueueManager, QueueManager>();
+
+            return services;
+        }
+
     }
 }
