@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using WebhookReceiver;
 
 namespace Struct.Delivery.API
@@ -8,15 +9,16 @@ namespace Struct.Delivery.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            builder.Services.ConfigureApplicationDependencies();
-            builder.Services.ConfigureInfrastructureDependencies();
-
             // Add services to the container.
             builder.Services.AddControllers();
-            
+
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
+            builder.Services.ConfigureApplicationDependencies();
+            builder.Services.ConfigureInfrastructureDependencies();
+
 
             var app = builder.Build();
 
