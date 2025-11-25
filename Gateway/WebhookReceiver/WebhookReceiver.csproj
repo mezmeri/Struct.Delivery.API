@@ -16,6 +16,14 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Delivery.Composition\Delivery.Composition.csproj" />
+    <ProjectReference Include="..\..\Delivery.Application\Delivery.Application.csproj" />
+    <ProjectReference Include="..\..\Delivery.Composition\Delivery.Composition.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>
