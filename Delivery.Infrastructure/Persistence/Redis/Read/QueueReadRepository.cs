@@ -13,8 +13,8 @@ namespace Delivery.Infrastructure.Persistence.Redis.Read
     public class QueueReadRepository : IQueueReadRepository
     {
         private readonly IDatabase _database;
-        private readonly string ProductTimestamps = "products:updates:timestamps";
-        private readonly string ProductQueueList = "products:updates:list";
+        private readonly string _productTimestamps = "products:updates:timestamps";
+        private readonly string _productQueueList = "products:updates:list";
 
         public QueueReadRepository(IConnectionMultiplexer redis)
         {
@@ -27,14 +27,14 @@ namespace Delivery.Infrastructure.Persistence.Redis.Read
 
             for (int i = 0; i < batchSize; i++)
             {
-                RedisValue item = await _database.ListLeftPopAsync(ProductQueueList);
+                RedisValue item = await _database.ListLeftPopAsync(_productQueueList);
 
                 if (!item.HasValue)
                 {
                     break;
                 }
 
-                long timestamp = (long)(await _database.SortedSetScoreAsync(ProductTimestamps, item)).GetValueOrDefault();
+                long timestamp = (long)(await _database.SortedSetScoreAsync(_productTimestamps, item)).GetValueOrDefault();
                 result.Add((item, timestamp));
             }
 

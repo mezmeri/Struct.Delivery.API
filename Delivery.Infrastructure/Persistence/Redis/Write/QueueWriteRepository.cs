@@ -11,8 +11,8 @@ namespace Delivery.Infrastructure.Persistence.Redis.Write
     public class QueueWriteRepository : IQueueWriteRepository
     {
         private readonly IDatabase _database;
-        private readonly string ProductTimestamps = "products:updates:timestamps";
-        private readonly string ProductQueueList = "products:updates:list";
+        private readonly string _productTimestamps = "products:updates:timestamps";
+        private readonly string _productQueueList = "products:updates:list";
 
         public QueueWriteRepository(IConnectionMultiplexer redis)
         {
@@ -30,23 +30,16 @@ namespace Delivery.Infrastructure.Persistence.Redis.Write
                 return;
             }
 
-            var addTasks = redisValues.Select(id => _database.SortedSetAddAsync(ProductTimestamps, id, timestamp)).ToArray();
-
-            bool[] addedFlags = await Task.WhenAll(addTasks);
-
-            List<RedisValue> newIds = new List<RedisValue>();
-
-            for (int i = 0; i < addedFlags.Length; i++)
+            RedisValue[] newIds = (await Task.WhenAll(redisValues.Select(async id =>
             {
-                if (addedFlags[i])
-                {
-                    newIds.Add(redisValues[i]);
-                }
-            }
+                bool added = await _database.SortedSetAddAsync(_productTimestamps, id, timestamp);
+                return (id, added);
 
-            if (newIds.Count > 0)
+            }))).Where(x => x.added).Select(x => x.id).ToArray();
+
+            if (newIds.Length > 0)
             {
-                await _database.ListLeftPushAsync(ProductQueueList, newIds.ToArray());
+                await _database.ListLeftPushAsync(_productQueueList, newIds.ToArray());
             }
 
         }
@@ -60,27 +53,27 @@ namespace Delivery.Infrastructure.Persistence.Redis.Write
                 return;
             }
 
-            RedisValue[] redisValues = updatesList.Select(u => (RedisValue)u.Item1).ToArray();
-
-            Task<double?>[] scoreTasks = updatesList.Select(u => _database.SortedSetScoreAsync(ProductTimestamps, u.Item1)).ToArray();
-            
-            double?[] redisScores = await Task.WhenAll(scoreTasks);
-
-            List<RedisValue> toRequeue = new List<RedisValue>();
-
-            for (int i = 0; i < updatesList.Count; i++)
-            {
-                if (redisScores[i].HasValue && redisScores[i].Value > updatesList[i].Item2)
+            (string, long, double?)[] scores = await Task.WhenAll(
+                updatesList.Select(async x =>
                 {
-                    toRequeue.Add(updatesList[i].Item1);
-                }
-            }
+                    double? score = await _database.SortedSetScoreAsync(_productTimestamps, x.Item1);
+                    return (x.Item1, x.Item2, score);
+                })
+            );
 
-            await _database.SortedSetRemoveAsync(ProductTimestamps, redisValues);
+            RedisValue[] toRequeue = scores.Where(x => x.Item3.HasValue && x.Item3.Value > x.Item2)
+                .Select(x => (RedisValue)x.Item1)
+                .ToArray();
 
-            if (toRequeue.Count > 0)
+            RedisValue[] toRemove = scores.Where(x => !x.Item3.HasValue || x.Item3.Value <= x.Item2)
+                .Select(x => (RedisValue)x.Item1)
+                .ToArray();
+
+            await _database.SortedSetRemoveAsync(_productTimestamps, toRemove);
+
+            if (toRequeue.Length > 0)
             {
-                await _database.ListLeftPushAsync(ProductQueueList, toRequeue.ToArray());
+                await _database.ListLeftPushAsync(_productQueueList, toRequeue);
             }
         }
 
@@ -93,7 +86,7 @@ namespace Delivery.Infrastructure.Persistence.Redis.Write
 
             RedisValue[] redisValues = ids.Select(id => (RedisValue)id).ToArray();
 
-            await _database.ListRightPushAsync(ProductQueueList, redisValues);
+            await _database.ListRightPushAsync(_productQueueList, redisValues);
         }
 
     }
