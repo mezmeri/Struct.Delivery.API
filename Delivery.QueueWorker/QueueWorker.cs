@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-// HUSK HUSK!!! Add "Project Reference v højreklik af "Delivery.QueueWorker"
 using Delivery.Application.Interfaces.Repositories;
 using Delivery.Application.Services;
 
