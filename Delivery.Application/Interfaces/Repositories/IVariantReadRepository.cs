@@ -1,4 +1,4 @@
-﻿using Struct.App.Api.Models.VariantGroup;
+﻿using Struct.App.Api.Models.Variant;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +7,8 @@ using System.Threading.Tasks;
 
 namespace Delivery.Application.Interfaces.Repositories
 {
-    public interface IVariantGroupWriteRepository
+    public interface IVariantReadRepository
     {
+        Task<List<VariantModel>> GetPimData(List<int> ids);
     }
 }
