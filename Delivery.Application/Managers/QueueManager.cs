@@ -12,57 +12,15 @@ namespace Delivery.Infrastructure.Managers
     public class QueueManager : IQueueManager
     {
         private readonly IQueueWriteRepository _queueWriteRepository;
-        private readonly IQueueReadRepository _queueReadRepository;
-        private readonly IProductWriteRepository _productWriteRepository;
-        private readonly IProductReadRepository _productReadRepository;
-        private readonly PimApiService _pimApiService;
-        private readonly FilterDirtyIdsService _filterDirtyIdsService;
 
-        public QueueManager(IQueueWriteRepository queueWriteRepository, IQueueReadRepository queueReadRepository,IProductWriteRepository productWriteRepository, IProductReadRepository productReadRepository, FilterDirtyIdsService filterDirtyIdsService, PimApiService pimApiService) 
+        public QueueManager(IQueueWriteRepository queueWriteRepository)
         {
-            _queueWriteRepository = queueWriteRepository;
-            _queueReadRepository = queueReadRepository;
-            _productWriteRepository = productWriteRepository;
-            _productReadRepository = productReadRepository;
-            _filterDirtyIdsService = filterDirtyIdsService;
-            _pimApiService = pimApiService;
+            _queueWriteRepository = queueWriteRepository;  
         }
 
         public async Task EnqueueUpdatesAsync(IEnumerable<string> ids)
         {
-            await _queueWriteRepository.AddToQueueAsync(ids);
-
-            await ProcessQueueAsync();
-        }
-
-        public async Task ProcessQueueAsync()
-        {
-            IEnumerable<(string, long)> queuedChanges = await _queueReadRepository.GetProductChanges(100);
-
-            if (!queuedChanges.Any())
-            {
-                return;  
-            }
-
-            IEnumerable<string> cleanIds = await _filterDirtyIdsService.FilterDirtyIds(queuedChanges);
-
-            List<string> dirtyIds = queuedChanges.Select(x => x.Item1).Except(cleanIds).ToList();
-
-
-            if (dirtyIds.Any())
-            {
-                await _queueWriteRepository.RequeueIdsAsync(dirtyIds);
-            }
-
-            if (cleanIds.Any())
-            {
-                var data = await _pimApiService.GetProductDataAsync(cleanIds);
-
-                await _productWriteRepository.CacheUpdates(data);
-
-                await _queueWriteRepository.RemoveFromQueueAsync(cleanIds);
-            }
-
+            await _queueWriteRepository.AddToQueueAsync(ids);   
         }
     }
 }
