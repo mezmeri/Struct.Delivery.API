@@ -2,7 +2,7 @@
 {
     public interface IQueueManager
     {
-        Task EnqueueUpdatesAsync(IEnumerable<string> ids);
+        Task EnqueueUpdatesAsync(string eventType, IEnumerable<string> ids);
 
     }
 }

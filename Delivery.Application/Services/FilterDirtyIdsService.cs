@@ -15,9 +15,9 @@ namespace Delivery.Application.Services
             _queueReadRepository = queueReadRepository;
         }
 
-        public async Task<IEnumerable<string>> FilterDirtyIds(IEnumerable<(string Id, long Timestamp)> idsWithTimestamps)
+        public async Task<IEnumerable<string>> FilterDirtyIds(IEnumerable<(string Id, long Timestamp, string)> idsWithTimestamps)
         {
-            IEnumerable<(string, long)> queuedItems = await _queueReadRepository.GetProductChanges(idsWithTimestamps.Count());
+            IEnumerable<(string, long, string)> queuedItems = await _queueReadRepository.GetQueueUpdates(idsWithTimestamps.Count());
 
             Dictionary<string, long> latestQueueTimestamps = queuedItems.ToDictionary(x => x.Item1, x => x.Item2);
 

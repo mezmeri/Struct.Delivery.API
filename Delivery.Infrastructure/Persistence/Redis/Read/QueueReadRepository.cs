@@ -1,4 +1,5 @@
 ﻿using Delivery.Application.Interfaces.Repositories;
+using Delivery.Application.Services;
 using StackExchange.Redis;
 using Struct.App.Api.Models.Product;
 using System;
@@ -13,30 +14,39 @@ namespace Delivery.Infrastructure.Persistence.Redis.Read
     public class QueueReadRepository : IQueueReadRepository
     {
         private readonly IDatabase _database;
-        private readonly string ProductUpdateQueueName = "products:updates:pending";
-        private readonly string ProductTimestamps = "products:updates:timestamps";
-        private readonly string ProductQueueList = "products:updates:list";
+        private readonly GenerateKeyService _generateKeyService;
 
-        public QueueReadRepository(IConnectionMultiplexer redis)
+        public QueueReadRepository(IConnectionMultiplexer redis, GenerateKeyService generateKeyService)
         {
             _database = redis.GetDatabase();
+            _generateKeyService = generateKeyService;
         }
 
-        public async Task<IEnumerable<(string, long)>> GetProductChanges(int batchSize = 100)
+        public async Task<IEnumerable<(string, long, string)>> GetQueueUpdates(int batchSize = 100)
         {
-            var result = new List<(string, long)>();
+            var result = new List<(string, long, string)>();
 
-            for (int i = 0; i < batchSize; i++)
+            string[] allQueueKeys = (await _database.SetMembersAsync("queues:all")).Select(x => x.ToString()).ToArray();
+
+            foreach (string key in allQueueKeys)
             {
-                RedisValue item = await _database.ListLeftPopAsync(ProductQueueList);
-
-                if (!item.HasValue)
+                for (int i = 0; i < batchSize; i++)
                 {
-                    break;
-                }
+                    string eventType = _generateKeyService.ExtractEventType(key);
 
-                long timestamp = (long)(await _database.SortedSetScoreAsync(ProductTimestamps, item)).GetValueOrDefault();
-                result.Add((item, timestamp));
+                    RedisValue item = await _database.ListLeftPopAsync(key);
+
+                    if (!item.HasValue)
+                    {
+                        break;
+                    }
+
+                    string timestampKey = key.Replace(":list", ":timestamps");
+
+                    long timestamp = (long)(await _database.SortedSetScoreAsync(timestampKey, item)).GetValueOrDefault();
+                    
+                    result.Add((item, timestamp, eventType));
+                }
             }
 
             return result;

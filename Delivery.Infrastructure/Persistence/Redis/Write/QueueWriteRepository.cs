@@ -1,5 +1,6 @@
 ﻿using Delivery.Application.Interfaces.Repositories;
 using StackExchange.Redis;
+using Delivery.Application.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,17 +12,21 @@ namespace Delivery.Infrastructure.Persistence.Redis.Write
     public class QueueWriteRepository : IQueueWriteRepository
     {
         private readonly IDatabase _database;
+        private readonly GenerateKeyService _keyService;
         private readonly string ProductUpdateQueueName = "products:updates:pending";
         private readonly string ProductTimestamps = "products:updates:timestamps";
         private readonly string ProductQueueList = "products:updates:list";
 
-        public QueueWriteRepository(IConnectionMultiplexer redis)
+        public QueueWriteRepository(IConnectionMultiplexer redis, GenerateKeyService keyService)
         {
             _database = redis.GetDatabase();
+            _keyService = keyService;
         }
 
-        public async Task AddToQueueAsync(IEnumerable<string> ids)
+        public async Task AddToQueueAsync(string eventType, IEnumerable<string> ids)
         {
+            var (setKey, timestampKey, listKey) = _keyService.GenerateQueueKey(eventType);
+
             long timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
             RedisValue[] redisValues = ids.Select(id => (RedisValue)id).ToArray();
@@ -31,7 +36,7 @@ namespace Delivery.Infrastructure.Persistence.Redis.Write
                 return;
             }
 
-            bool[] addedFlags = await Task.WhenAll(redisValues.Select(id => _database.SetAddAsync(ProductUpdateQueueName, id)));
+            bool[] addedFlags = await Task.WhenAll(redisValues.Select(id => _database.SetAddAsync(setKey, id)));
 
             List<RedisValue> newIds = new List<RedisValue>();
 
@@ -43,13 +48,16 @@ namespace Delivery.Infrastructure.Persistence.Redis.Write
 
             var entries = redisValues.Select(id => new SortedSetEntry(id, timestamp)).ToArray();
 
-            await _database.SortedSetAddAsync(ProductTimestamps, entries);
+            await _database.SortedSetAddAsync(timestampKey, entries);
 
-            await _database.ListLeftPushAsync(ProductQueueList, newIds.ToArray());
+            await _database.ListLeftPushAsync(listKey, newIds.ToArray());
+
+            await _database.SetAddAsync("queues:all", listKey);
+
 
         }
 
-        public async Task RemoveFromQueueAsync(IEnumerable<string> ids)
+        public async Task RemoveFromQueueAsync(string eventType, IEnumerable<string> ids)
         {
             RedisValue[] redisValues = ids.Select(id => (RedisValue)id).ToArray();
 
@@ -58,20 +66,24 @@ namespace Delivery.Infrastructure.Persistence.Redis.Write
                 return;
             }
 
-            await _database.SetRemoveAsync(ProductUpdateQueueName, redisValues);
-            await _database.SortedSetRemoveAsync(ProductTimestamps, redisValues);
+            var (setKey, timestampKey, listKey) = _keyService.GenerateQueueKey(eventType);
+
+            await _database.SetRemoveAsync(setKey, redisValues);
+            await _database.SortedSetRemoveAsync(timestampKey, redisValues);
         }
 
-        public async Task RequeueIdsAsync(IEnumerable<string> ids)
+        public async Task RequeueIdsAsync(string eventType, IEnumerable<string> ids)
         {
             if (!ids.Any())
             {
                 return;
             }
 
+            var (setKey, timestampKey, listKey) = _keyService.GenerateQueueKey(eventType);
+
             RedisValue[] redisValues = ids.Select(id => (RedisValue)id).ToArray();
 
-            await _database.ListRightPushAsync(ProductQueueList, redisValues);
+            await _database.ListRightPushAsync(listKey, redisValues);
         }
 
     }

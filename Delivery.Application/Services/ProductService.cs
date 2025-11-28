@@ -12,7 +12,7 @@ namespace Delivery.Application.Services
             _queueManager = queueManager;
         }
 
-        public async Task HandleWebhookAsync(JsonElement payload)
+        public async Task HandleWebhookAsync(string eventType, JsonElement payload)
         {
             var productIds = ExtractProductIds(payload);
             if (!productIds.Any())
@@ -20,7 +20,7 @@ namespace Delivery.Application.Services
                 return;
             }
 
-            await _queueManager.EnqueueUpdatesAsync(productIds);
+            await _queueManager.EnqueueUpdatesAsync(eventType, productIds);
 
         }
 

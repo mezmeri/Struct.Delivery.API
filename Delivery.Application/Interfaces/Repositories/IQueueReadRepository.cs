@@ -8,7 +8,7 @@ namespace Delivery.Application.Interfaces.Repositories
 {
     public interface IQueueReadRepository
     {
-        Task<IEnumerable<(string, long)>> GetProductChanges(int batchSize);
+        Task<IEnumerable<(string, long, string)>> GetQueueUpdates(int batchSize);
 
     }
 }
