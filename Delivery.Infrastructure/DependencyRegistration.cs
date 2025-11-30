@@ -27,6 +27,7 @@ namespace Delivery.Infrastructure
         {
             services.AddSingleton<IProductReadRepository, ProductReadRepository>();
             services.AddSingleton<IQueueReadRepository, QueueReadRepository>();
+            services.AddSingleton<IVariantReadRepository, VariantReadRepository>();
 
             return services;
         }
