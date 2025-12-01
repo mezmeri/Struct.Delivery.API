@@ -43,19 +43,19 @@ namespace Delivery.QueueWorker
             List<string> dirtyIds = queuedChanges.Select(x => x.Item1).Except(cleanIds).ToList();
 
 
-            if (dirtyIds.Any())
-            {
-                await _queueReadRepository.RequeueIdsAsync(dirtyIds);
-            }
+            //if (dirtyIds.Any())
+            //{
+            //    await _queueReadRepository.(dirtyIds);
+            //}
 
-            if (cleanIds.Any())
-            {
-                var data = await _pimApiService.GetProductDataAsync(cleanIds);
+            //if (cleanIds.Any())
+            //{
+            //    var data = await _pimApiService.GetProductDataAsync(cleanIds);
 
-                await _productWriteRepository.CacheUpdates(data);
+            //    await _productWriteRepository.CacheUpdates(data);
 
-                await _queueReadRepository.RemoveFromQueueAsync(cleanIds);
-            }
+            //    await _queueReadRepository.RemoveFromQueueAsync(cleanIds);
+            //}
         }
     }
 }
