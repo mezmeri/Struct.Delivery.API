@@ -1,52 +1,85 @@
 ﻿using Delivery.Application.Interfaces.Repositories;
+using Delivery.Application.Models;
+using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Text.Json;
 
 namespace Delivery.Infrastructure.Persistence.Redis.Write
 {
     public class QueueWriteRepository : IQueueWriteRepository
     {
         private readonly IDatabase _database;
+        private readonly ILogger<QueueWriteRepository> _logger;
         private readonly string ProductUpdateQueueName = "products:updates:pending";
         private readonly string ProductTimestamps = "products:updates:timestamps";
         private readonly string ProductQueueList = "products:updates:list";
+        private readonly string ProductAttributeChanges = "products:updates:attributes";
 
-        public QueueWriteRepository(IConnectionMultiplexer redis)
+        public QueueWriteRepository(IConnectionMultiplexer redis, ILogger<QueueWriteRepository> logger)
         {
             _database = redis.GetDatabase();
+            _logger = logger;
         }
 
-        public async Task AddToQueueAsync(IEnumerable<string> ids)
+
+
+        public async Task AddToQueueAsync(IEnumerable<ProductChangeQueueItem> changes)
         {
-            long timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            var changesList = changes.ToList();
 
-            RedisValue[] redisValues = ids.Select(id => (RedisValue)id).ToArray();
-
-            if (redisValues.Length == 0)
+            if (!changesList.Any())
             {
+                _logger.LogWarning("AddToQueueAsync called uden ændringer i listen");
                 return;
             }
 
-            bool[] addedFlags = await Task.WhenAll(redisValues.Select(id => _database.SetAddAsync(ProductUpdateQueueName, id)));
+            
+            var tasks = new List<Task>();
 
-            List<RedisValue> newIds = new List<RedisValue>();
-
-            for (int i = 0; i < redisValues.Length; i++)
+            foreach (var change in changesList)
             {
-                if (addedFlags[i])
-                    newIds.Add(redisValues[i]);
+                var id = change.ProductId;
+                long timestamp = change.Timestamp > 0 ? change.Timestamp : DateTimeOffset.Now.ToUnixTimeMilliseconds();
+
+                // Add to set (Flag for new entry)
+                var addedFlag = await _database.SetAddAsync(ProductUpdateQueueName, id);
+
+                if (addedFlag)
+                {
+                    _logger.LogDebug("Product {ProductId} added to queue (new entry).", id);
+
+                    // Store timestamp
+                    tasks.Add(_database.SortedSetAddAsync(ProductTimestamps, id, timestamp));
+
+                    // Store attribute changes as JSON if available
+                    if (change.ChangedAttributes != null && change.ChangedAttributes.Any())
+                    {
+                        string attributesJson = JsonSerializer.Serialize(change.ChangedAttributes);
+                        tasks.Add(_database.StringSetAsync($"{ProductAttributeChanges}:{id}", attributesJson));
+
+                        _logger.LogDebug("Product {ProductId} has {Count} attribute changes stored in Redis.",
+                            id, change.ChangedAttributes.Count);
+                    }
+
+                    // Add productId til Redis Queue List
+                    tasks.Add(_database.ListLeftPushAsync(ProductQueueList, id));
+                }
+                else
+                {
+                    _logger.LogDebug("Product {ProductId} already exists in queue (duplicate skipped).", id);
+                }
             }
 
-            var entries = redisValues.Select(id => new SortedSetEntry(id, timestamp)).ToArray();
-
-            await _database.SortedSetAddAsync(ProductTimestamps, entries);
-
-            await _database.ListLeftPushAsync(ProductQueueList, newIds.ToArray());
-
+            if (tasks.Any())
+            {
+                await Task.WhenAll(tasks);
+                _logger.LogInformation("Successfully added {Count} products to Redis queue.", changesList.Count);
+            }
         }
 
         public async Task RemoveFromQueueAsync(IEnumerable<string> ids)
@@ -58,8 +91,24 @@ namespace Delivery.Infrastructure.Persistence.Redis.Write
                 return;
             }
 
-            await _database.SetRemoveAsync(ProductUpdateQueueName, redisValues);
-            await _database.SortedSetRemoveAsync(ProductTimestamps, redisValues);
+            _logger.LogInformation("Removing {Count} products from Redis queue...", redisValues.Length);
+
+            var tasks = new List<Task>
+            {
+                _database.SetRemoveAsync(ProductUpdateQueueName, redisValues),
+                _database.SortedSetRemoveAsync(ProductTimestamps, redisValues)
+            };
+
+            // Remove attribute changes
+            foreach (var id in ids)
+            {
+                tasks.Add(_database.KeyDeleteAsync($"{ProductAttributeChanges}:{id}"));
+                _logger.LogDebug("Removing attribute data for product {ProductId}.", id);
+            }
+
+            await Task.WhenAll(tasks);
+
+            _logger.LogInformation("Successfully removed {Count} products from Redis queue.", redisValues.Length);
         }
 
         public async Task RequeueIdsAsync(IEnumerable<string> ids)
@@ -73,6 +122,5 @@ namespace Delivery.Infrastructure.Persistence.Redis.Write
 
             await _database.ListRightPushAsync(ProductQueueList, redisValues);
         }
-
     }
 }

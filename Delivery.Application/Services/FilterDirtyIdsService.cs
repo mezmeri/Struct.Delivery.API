@@ -1,4 +1,5 @@
 ﻿using Delivery.Application.Interfaces.Repositories;
+using Delivery.Application.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,9 +18,9 @@ namespace Delivery.Application.Services
 
         public async Task<IEnumerable<string>> FilterDirtyIds(IEnumerable<(string Id, long Timestamp)> idsWithTimestamps)
         {
-            IEnumerable<(string, long)> queuedItems = await _queueReadRepository.GetProductChanges(idsWithTimestamps.Count());
+            IEnumerable<ProductChangeQueueItem> queuedItems = await _queueReadRepository.GetProductChanges(idsWithTimestamps.Count());
 
-            Dictionary<string, long> latestQueueTimestamps = queuedItems.ToDictionary(x => x.Item1, x => x.Item2);
+            Dictionary<string, long> latestQueueTimestamps = queuedItems.ToDictionary(x => x.ProductId, x => x.Timestamp);
 
             IEnumerable<string> cleanIds = idsWithTimestamps.Where(x => !latestQueueTimestamps.TryGetValue(x.Id, out var latest) || x.Timestamp >= latest)
                 .Select(x => x.Id);

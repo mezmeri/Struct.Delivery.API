@@ -1,0 +1,244 @@
+﻿<#@ template debug="true" hostspecific="true" language="C#" #>
+<#@ assembly name="NetStandard" #>
+<#@ assembly name="System.Core" #>
+<#@ assembly name="$(TargetDir)Newtonsoft.Json.dll" #>
+<#@ assembly name="$(TargetDir)Struct.App.Api.Models.dll" #>
+<#@ assembly name="$(TargetDir)Struct.App.Api.Client.dll" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="Struct.App.Api.Models.ModelGenerator" #>
+<#@ import namespace="System.Text.RegularExpressions" #>
+<#
+    //To configure this T4Template, make sure the assemblies above points to
+	//Newtonsoft.Json.dll, Struct.App.Api.Models.dkk and Struct.App.Api.Client.dll in your workspace
+
+	//Set the URL to your struct PIM Api
+    string pimUrl = "https://apideveloper-milad.api.struct.com";
+
+//Set an API key, which has General -> Model generator access ()
+string apiKey = "STRCT-iRnoFBRy17RDOJj9MniCY6gu5IPtDO";
+
+//Select if you want to add attributes that are set through the category structure to be added to product and variant models
+bool addCategoryProperties = false;
+
+//Namespace of models generated
+string namespaceName = "Struct.PIM.Models";
+
+var apiClient = new Struct.App.Api.Client.StructApiClient(pimUrl, apiKey);
+var models = apiClient.Miscellaneous.GetModels();
+var allAttributes = new List<ModelStructure.AttributeModel>();
+allAttributes.AddRange(models.ProductModels.SelectMany(x => x.Properties));
+allAttributes.AddRange(models.VariantModels.SelectMany(x => x.Properties));
+allAttributes.AddRange(models.CategoryModels.SelectMany(x => x.Properties));
+allAttributes.AddRange(models.VariantGroupModels.SelectMany(x => x.Properties));
+allAttributes.AddRange(models.CategoryAttributeModels);
+var uniqueAttributes = allAttributes.GroupBy(p => p.Alias).Select(g => g.First()).ToList();
+#>
+using System;
+using System.Collections.Generic;
+using Struct.App.Api.Models.Shared;
+using Struct.App.Api.Models.Attribute;
+
+namespace <#= namespaceName #>
+{
+    #region ProductModels
+    <# foreach (var model in models.ProductModels) {
+        var properties = addCategoryProperties ? model.Properties.Concat(models.CategoryAttributeModels).GroupBy(x => x.Alias).Select(x => x.First()).ToList() : model.Properties;
+WriteLine(GenerateClass(model.Alias + "Product", properties, models.GlobalListModels, false));
+    } #>
+    #endregion
+
+    #region VariantModels
+    <# foreach (var model in models.VariantModels) {
+        var properties = addCategoryProperties ? model.Properties.Concat(models.CategoryAttributeModels).GroupBy(x => x.Alias).Select(x => x.First()).ToList() : model.Properties;
+WriteLine(GenerateClass(model.Alias + "Variant", properties, models.GlobalListModels, false));
+    } #>
+    #endregion
+
+    #region CategoryModels
+    <# foreach (var model in models.CategoryModels) {
+        WriteLine(GenerateClass(model.Alias + "Category", model.Properties, models.GlobalListModels, false));
+    } #>
+    #endregion
+
+    #region VariantGroupModels
+    <# foreach (var model in models.VariantGroupModels) {
+        WriteLine(GenerateClass(model.Alias + "VariantGroup", model.Properties, models.GlobalListModels, false));
+    } #>
+    #endregion
+
+    #region Attributes
+    <# foreach (var model in uniqueAttributes.Where(x => x.DataType == "ComplexAttribute")) {
+        WriteLine(GenerateClass(model.Alias, model.Properties, models.GlobalListModels, true));
+    } #>
+
+    <# foreach (var model in uniqueAttributes.Where(x => x.DataType == "ListAttribute" && x.Properties[0].DataType == "ComplexAttribute")) {
+        WriteLine(GenerateClass(model.Alias, model.Properties[0].Properties, models.GlobalListModels, true));
+    } #>
+    #endregion
+
+    #region GlobalListModels
+    <# foreach (var model in models.GlobalListModels.Where(x => x.DataType == "ComplexAttribute")) {
+        WriteLine(GenerateClass(model.Alias + "GlobalList", model.Properties, models.GlobalListModels, true));
+    } #>
+
+    <# foreach (var model in models.GlobalListModels.Where(x => x.DataType == "ListAttribute" && x.Properties[0].DataType == "ComplexAttribute")) {
+        WriteLine(GenerateClass(model.Alias + "GlobalList", model.Properties[0].Properties, models.GlobalListModels, true));
+    } #>
+    #endregion
+}
+
+<#+
+private static string GenerateClass(string name, List<Struct.App.Api.Models.ModelGenerator.ModelStructure.AttributeModel> properties, List<Struct.App.Api.Models.ModelGenerator.ModelStructure.AttributeModel> globalListModels, bool generateSubclasses)
+{
+    return GenerateClassRecursive(name, properties, globalListModels, new StringBuilder(), generateSubclasses);
+}
+
+private static string GenerateClassRecursive(string name, List<ModelStructure.AttributeModel> properties, List<Struct.App.Api.Models.ModelGenerator.ModelStructure.AttributeModel> globalListModels, StringBuilder sb, bool generateSubclasses)
+{
+    sb.AppendLine($"public partial class {ToClassName(name)}Model");
+    sb.AppendLine("{");
+
+    sb.AppendLine(@"   private Dictionary<string, dynamic> _values = new Dictionary<string, dynamic>();");
+    sb.AppendLine("");
+
+    foreach (var property in properties ?? new List<Struct.App.Api.Models.ModelGenerator.ModelStructure.AttributeModel>(0))
+    {
+        var dataType = GetDataType(property, globalListModels);
+
+        sb.AppendLine("   /// <summary>");
+        sb.AppendLine("   /// " + (string.IsNullOrWhiteSpace(property.Description) ? property.Name : property.Description));
+        sb.AppendLine("   /// </summary>");
+        sb.AppendLine($@"   public virtual {dataType} {ToClassName(property.Alias)}");
+        sb.AppendLine(@"   {");
+        sb.AppendLine($@"       get {{ dynamic value; return _values.TryGetValue(""{property.Alias}"", out value) ? value : default({dataType}); }}");
+        sb.AppendLine($@"       set {{ _values[""{property.Alias}""] = value; }}");
+        sb.AppendLine(@"   }");
+        sb.AppendLine("");
+
+        sb.AppendLine($@"   public bool ShouldSerialize{ToClassName(property.Alias).TrimStart('@')}()");
+        sb.AppendLine(@"   {");
+        sb.AppendLine($@"       return _values.ContainsKey(""{property.Alias}"");");
+        sb.AppendLine(@"   }");
+        sb.AppendLine("");
+
+        if (generateSubclasses)
+        {
+            if (property.DataType == "ComplexAttribute")
+            {
+                GenerateClassRecursive(property.Alias, property.Properties, globalListModels, sb, generateSubclasses);
+            }
+            else if (property.DataType == "ListAttribute" && property.Properties[0].DataType == "ComplexAttribute")
+            {
+                GenerateClassRecursive(property.Alias, property.Properties[0].Properties, globalListModels, sb, generateSubclasses);
+            }
+        }
+    }
+
+    sb.AppendLine("}");
+    return sb.ToString();
+}
+
+private static string GetDataType(ModelStructure.AttributeModel property, List<ModelStructure.AttributeModel> globalListModels)
+{
+    string type;
+
+    if (property.DataType == "ListAttribute")
+    {
+        var subProperty = property.Properties[0];
+        if (subProperty.DataType == "ComplexAttribute")
+        {
+            type = property.Alias + "Model";
+        }
+        else
+        {
+            type = GetDataType(subProperty, globalListModels);
+        }
+    }
+    else if (property.DataType == "ComplexAttribute")
+    {
+        type = property.Alias + "Model";
+    }
+    else if (property.DataType == "GlobalListValueReferenceAttribute")
+    {
+        var globalListModel = globalListModels.First(x => x.Alias == property.ReferencedAttribute);
+        if (globalListModel.DataType == "ComplexAttribute")
+        {
+            type = property.ReferencedAttribute + "GlobalListModel";
+        }
+        else
+        {
+            type = GetDataType(globalListModel, globalListModels);
+        }
+    }
+    else
+    {
+
+        type = SimpleAttributeTypeMap[property.DataType];
+    }
+
+    if (property.IsMultiValue)
+    {
+        type = $"List<{type.TrimEnd('?')}>";
+    }
+
+    if (property.DimensionSpecific && property.Localized)
+    {
+        return $"List<SegmentedLocalizedData<{type.TrimEnd('?')}>>";
+    }
+    else if (property.DimensionSpecific)
+    {
+        type = $"List<SegmentedData<{type.TrimEnd('?')}>>";
+    }
+    else if (property.Localized)
+    {
+        type = $"List<LocalizedData<{type.TrimEnd('?')}>>";
+    }
+
+    return type;
+}
+
+private static readonly Dictionary<string, string> SimpleAttributeTypeMap = new Dictionary<string, string> {
+    {"TextAttribute", "string" },
+    {"NumberAttribute", "decimal?" },
+    {"BooleanAttribute", "bool?" },
+    {"DateTimeAttribute", "DateTimeOffset?" },
+    {"MediaAttribute", "string" },
+    {"ProductReferenceAttribute", "int?" },
+    {"VariantReferenceAttribute", "int?" },
+    {"CategoryReferenceAttribute", "int?" },
+    {"CollectionReferenceAttribute", "Guid?" },
+    {"AssetReferenceAttribute", "string"},
+    {"AttributeReferenceAttribute", "AttributeReference" }
+};
+
+private static string ToClassName(string name)
+{
+    var className = name;
+    var isValid = Microsoft.CSharp.CSharpCodeProvider.CreateProvider("C#").IsValidIdentifier(className);
+
+    if (!isValid)
+    {
+        // File name contains invalid chars, remove them
+        var regex = new Regex(@"[^\p{Ll}\p{Lu}\p{Lt}\p{Lo}\p{Nd}\p{Nl}\p{Mn}\p{Mc}\p{Cf}\p{Pc}\p{Lm}]");
+        className = regex.Replace(className, "");
+
+        // Class name doesn't begin with a letter, insert an @
+        if (!char.IsLetter(className, 0))
+        {
+            className = className.Insert(0, "@");
+        }
+    }
+
+    className = className.Replace(" ", string.Empty);
+
+    //if still not valid. 
+    //this is the case when eg using a reserved keyword as property name. Prefix with @
+    if (!Microsoft.CSharp.CSharpCodeProvider.CreateProvider("C#").IsValidIdentifier(className))
+    {
+        className = className.Insert(0, "@");
+    }
+    return className.Replace(" ", string.Empty);
+}
+#>
