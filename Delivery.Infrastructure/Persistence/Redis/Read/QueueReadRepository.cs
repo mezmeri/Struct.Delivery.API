@@ -1,5 +1,6 @@
 ﻿using Delivery.Application.Interfaces.Repositories;
 using Delivery.Application.Services;
+using Delivery.Domain.Events;
 using StackExchange.Redis;
 using Struct.App.Api.Models.Product;
 using System;
@@ -14,42 +15,53 @@ namespace Delivery.Infrastructure.Persistence.Redis.Read
     public class QueueReadRepository : IQueueReadRepository
     {
         private readonly IDatabase _database;
-        private readonly GenerateKeyService _generateKeyService;
 
-        public QueueReadRepository(IConnectionMultiplexer redis, GenerateKeyService generateKeyService)
+        private string _listKey = "queue:events";
+        private string _sortedSetKey = "queue:events:timestamps";
+
+        public QueueReadRepository(IConnectionMultiplexer redis)
         {
             _database = redis.GetDatabase();
-            _generateKeyService = generateKeyService;
         }
 
-        public async Task<IEnumerable<(string, long, string)>> GetQueueUpdates(int batchSize = 100)
+        public async Task<IEnumerable<QueueItemEventArgs>> GetQueueUpdates(int batchSize = 100)
         {
-            var result = new List<(string, long, string)>();
+            List<QueueItemEventArgs> events = new List<QueueItemEventArgs>();
 
-            string[] allQueueKeys = (await _database.SetMembersAsync("queues:all")).Select(x => x.ToString()).ToArray();
-
-            foreach (string key in allQueueKeys)
+            for (int i = 0; i < batchSize; i++)
             {
-                for (int i = 0; i < batchSize; i++)
+                RedisValue item = await _database.ListLeftPopAsync(_listKey);
+
+                if (!item.HasValue)
                 {
-                    string eventType = _generateKeyService.ExtractEventType(key);
+                    break;
+                }
 
-                    RedisValue item = await _database.ListLeftPopAsync(key);
+                QueueItemEventArgs? queueItem = JsonSerializer.Deserialize<QueueItemEventArgs>(item);
+                if (queueItem != null)
+                {
+                    events.Add(queueItem);
+                }
+            }
+            
+            return events;
+        }
 
-                    if (!item.HasValue)
-                    {
-                        break;
-                    }
+        public async Task<Dictionary<string, long>> GetLatestTimestampsAsync(IEnumerable<string> ids)
+        {
+            Dictionary<string, long> results = new Dictionary<string, long>();
 
-                    string timestampKey = key.Replace(":list", ":timestamps");
+            foreach (string id in ids)
+            {
+                double? score = await _database.SortedSetScoreAsync(_sortedSetKey, id);
 
-                    long timestamp = (long)(await _database.SortedSetScoreAsync(timestampKey, item)).GetValueOrDefault();
-                    
-                    result.Add((item, timestamp, eventType));
+                if (score.HasValue)
+                {
+                    results[id] = (long)score.Value;
                 }
             }
 
-            return result;
+            return results;
         }
 
     }

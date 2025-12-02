@@ -1,6 +1,7 @@
 ﻿using Delivery.Application.Interfaces.Managers;
 using Delivery.Application.Interfaces.Repositories;
 using Delivery.Application.Services;
+using Delivery.Domain.Events;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,16 +29,16 @@ namespace Delivery.Infrastructure.Managers
             _pimApiService = pimApiService;
         }
 
-        public async Task EnqueueUpdatesAsync(string eventType, IEnumerable<string> ids)
+        public async Task EnqueueUpdatesAsync(IEnumerable<QueueItemEventArgs> events)
         {
-            await _queueWriteRepository.AddToQueueAsync(eventType, ids);
+            await _queueWriteRepository.AddToQueueAsync(events);
 
             await ProcessQueueAsync();
         }
 
         public async Task ProcessQueueAsync()
         {
-            IEnumerable<(string, long, string)> queuedChanges = await _queueReadRepository.GetQueueUpdates(100);
+            IEnumerable<QueueItemEventArgs> queuedChanges = await _queueReadRepository.GetQueueUpdates(100);
 
             if (!queuedChanges.Any())
             {
@@ -46,30 +47,23 @@ namespace Delivery.Infrastructure.Managers
 
             IEnumerable<string> cleanIds = await _filterDirtyIdsService.FilterDirtyIds(queuedChanges);
 
-            List<string> dirtyIds = queuedChanges.Select(x => x.Item1).Except(cleanIds).ToList();
+            List<QueueItemEventArgs> dirtyItems = queuedChanges.Where(x => !cleanIds.Contains(x.Id)).ToList();
 
+            List<QueueItemEventArgs> cleanItems = queuedChanges.Where(x => cleanIds.Contains(x.Id)).ToList();
 
-            if (dirtyIds.Any())
+            if (dirtyItems.Any())
             {
-                var dirtyGroups = queuedChanges.Where(x => dirtyIds.Contains(x.Item1)).GroupBy(x => x.Item3); 
-
-                foreach (var group in dirtyGroups)
-                {
-                    string eventType = group.Key;
-                    List<string> ids = group.Select(x => x.Item1).ToList();
-
-                    await _queueWriteRepository.RequeueIdsAsync(eventType, ids);
-                }
+                await _queueWriteRepository.RequeueItemsAsync(dirtyItems);
             }
 
             if (cleanIds.Any())
             {
-                var groupedEvents = queuedChanges.Where(x => cleanIds.Contains(x.Item1)).GroupBy(x => x.Item3);
+                var groupedEvents = cleanItems.GroupBy(x => x.EventType);
 
                 foreach (var group in groupedEvents)
                 {
                     string eventType = group.Key;
-                    List<string> ids = group.Select(x => x.Item1).ToList();
+                    List<string> ids = group.Select(x => x.Id).ToList();
 
                     switch (eventType)
                     {
@@ -81,7 +75,7 @@ namespace Delivery.Infrastructure.Managers
                             break;
                     }
 
-                    await _queueWriteRepository.RemoveFromQueueAsync(eventType, ids);
+                    await _queueWriteRepository.RemoveFromQueueAsync(ids);
                 }
             }
         } 

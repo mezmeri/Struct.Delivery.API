@@ -1,8 +1,10 @@
-﻿namespace Delivery.Application.Interfaces.Managers
+﻿using Delivery.Domain.Events;
+
+namespace Delivery.Application.Interfaces.Managers
 {
     public interface IQueueManager
     {
-        Task EnqueueUpdatesAsync(string eventType, IEnumerable<string> ids);
+        Task EnqueueUpdatesAsync(IEnumerable<QueueItemEventArgs> events);
 
     }
 }

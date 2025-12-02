@@ -1,4 +1,6 @@
 ﻿using Delivery.Application.Interfaces.Managers;
+using Delivery.Domain.Events;
+using Delivery.Domain.Enum;
 using System.Text.Json;
 
 namespace Delivery.Application.Services
@@ -7,6 +9,8 @@ namespace Delivery.Application.Services
     {
         private readonly IQueueManager _queueManager;
 
+        private event EventHandler<ProductUpdatedEventArgs> _productUpdated;
+
         public ProductService(IQueueManager queueManager)
         {
             _queueManager = queueManager;
@@ -14,13 +18,21 @@ namespace Delivery.Application.Services
 
         public async Task HandleWebhookAsync(string eventType, JsonElement payload)
         {
-            var productIds = ExtractProductIds(payload);
-            if (!productIds.Any())
+            IEnumerable<string> productIds = ExtractProductIds(payload);
+
+            IEnumerable<ProductUpdatedEventArgs> productChanges = productIds.Select(id => new ProductUpdatedEventArgs
             {
-                return;
+                Id = id,
+                EventType = eventType,
+                EntityType = EntityType.Product
+            });
+
+            foreach (var productChange in productChanges)
+            {
+                _productUpdated?.Invoke(this, productChange);
             }
 
-            await _queueManager.EnqueueUpdatesAsync(eventType, productIds);
+            await _queueManager.EnqueueUpdatesAsync(productChanges);
 
         }
 
