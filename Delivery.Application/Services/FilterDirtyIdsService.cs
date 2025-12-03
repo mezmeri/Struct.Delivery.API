@@ -16,7 +16,7 @@ namespace Delivery.Application.Services
             _queueReadRepository = queueReadRepository;
         }
 
-        public async Task<IEnumerable<string>> FilterDirtyIds(IEnumerable<QueueItemEventArgs> items)
+        public async Task<IEnumerable<string>> FilterDirtyIds(IEnumerable<QueueItemDTO> items)
         {
             List<string> ids = items.Select(x => x.Id).Distinct().ToList();
 

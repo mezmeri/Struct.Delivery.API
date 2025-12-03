@@ -18,35 +18,48 @@ namespace Delivery.Infrastructure.Persistence.Redis.Write
 
         private string _listKey = "queue:events";
         private string _sortedSetKey = "queue:events:timestamps";
+        private string _hashSetKey = "queue:idmap";
 
         public QueueWriteRepository(IConnectionMultiplexer redis)
         {
             _database = redis.GetDatabase();
         }
 
-        public async Task AddToQueueAsync(IEnumerable<QueueItemEventArgs> events)
+        public async Task AddToQueueAsync(IEnumerable<QueueItemDTO> events)
         {
             long timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
-            SortedSetEntry[] sortedSetEntries = events.Select(x =>
+            List<RedisValue> newItemsToPush = new List<RedisValue>();
+
+            foreach (var obj in events)
             {
-                x.Timestamp = timestamp;
-                return new SortedSetEntry(JsonSerializer.Serialize(x), timestamp);
-            }).ToArray();
+                obj.Timestamp = timestamp;
 
-            bool[] addedFlags = await Task.WhenAll(sortedSetEntries.Select(entry => _database.SortedSetAddAsync(_sortedSetKey, entry.Element, entry.Score)));
+                string jsonObj = JsonSerializer.Serialize(obj);
 
-            List<RedisValue> newIds = new List<RedisValue>();
+                RedisValue oldJson = await _database.HashGetAsync(_hashSetKey, obj.Id);
 
-            for (int i = 0; i < sortedSetEntries.Length; i++)
-            {
-                if (addedFlags[i])
-                    newIds.Add(sortedSetEntries[i].Element);
+                bool wasAlreadyQueued = !oldJson.IsNullOrEmpty;
+
+                if (wasAlreadyQueued)
+                {
+                    await _database.SortedSetRemoveAsync(_sortedSetKey, oldJson);
+                }
+
+                await _database.SortedSetAddAsync(_sortedSetKey, jsonObj, timestamp);
+
+                await _database.HashSetAsync(_hashSetKey, obj.Id, jsonObj);
+
+                if (!wasAlreadyQueued)
+                {
+                    newItemsToPush.Add(jsonObj);
+                }
             }
 
-            if (newIds.Count > 0)
+
+            if (newItemsToPush.Count > 0)
             {
-                await _database.ListRightPushAsync(_listKey, newIds.ToArray());
+                await _database.ListRightPushAsync(_listKey, newItemsToPush.ToArray());
             }
 
         }
@@ -54,39 +67,38 @@ namespace Delivery.Infrastructure.Persistence.Redis.Write
         public async Task RemoveFromQueueAsync(IEnumerable<string> ids)
         {
 
-            if (!ids.Any())
+            foreach (var id in ids)
             {
-                return;
-            }
+                RedisValue jsonObj = await _database.HashGetAsync(_hashSetKey, id);
 
-            RedisValue[] redisValues = ids.Select(id => (RedisValue)id).ToArray();
-            
-            await _database.SortedSetRemoveAsync(_sortedSetKey, redisValues);
+                await _database.SortedSetRemoveAsync(_sortedSetKey, jsonObj);
+
+                await _database.HashDeleteAsync("queue:idmap", id);
+            }
         }
 
-        public async Task RequeueItemsAsync(IEnumerable<QueueItemEventArgs> items)
+        public async Task RequeueItemsAsync(IEnumerable<QueueItemDTO> items)
         {
-            if (!items.Any())
-            {
-                return;
-            }
-
-            List<RedisValue> serializedItems = new List<RedisValue>();
+            var toPush = new List<RedisValue>();
 
             foreach (var item in items)
             {
-                double? existingScore = await _database.SortedSetScoreAsync(_sortedSetKey, JsonSerializer.Serialize(item));
+                RedisValue json = await _database.HashGetAsync(_hashSetKey, item.Id);
+                if (json.IsNullOrEmpty)
+                    continue;
 
-                if (!existingScore.HasValue) continue;
+                double? timestamp = await _database.SortedSetScoreAsync(_sortedSetKey, item.Id);
+                if (!timestamp.HasValue)
+                    continue;
 
-                item.Timestamp = (long)existingScore.Value;
+                item.Timestamp = (long)timestamp.Value;
 
-                serializedItems.Add(JsonSerializer.Serialize(item));
+                toPush.Add(json);
             }
 
-            if (serializedItems.Count > 0)
+            if (toPush.Count > 0)
             {
-                await _database.ListRightPushAsync(_listKey, serializedItems.ToArray());
+                await _database.ListRightPushAsync(_listKey, toPush.ToArray());
             }
         }
 

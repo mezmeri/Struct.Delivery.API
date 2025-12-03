@@ -29,7 +29,7 @@ namespace Delivery.Infrastructure.Managers
             _pimApiService = pimApiService;
         }
 
-        public async Task EnqueueUpdatesAsync(IEnumerable<QueueItemEventArgs> events)
+        public async Task EnqueueUpdatesAsync(IEnumerable<QueueItemDTO> events)
         {
             await _queueWriteRepository.AddToQueueAsync(events);
 
@@ -38,7 +38,7 @@ namespace Delivery.Infrastructure.Managers
 
         public async Task ProcessQueueAsync()
         {
-            IEnumerable<QueueItemEventArgs> queuedChanges = await _queueReadRepository.GetQueueUpdates(100);
+            IEnumerable<QueueItemDTO> queuedChanges = await _queueReadRepository.GetQueueUpdates(100);
 
             if (!queuedChanges.Any())
             {
@@ -47,9 +47,9 @@ namespace Delivery.Infrastructure.Managers
 
             IEnumerable<string> cleanIds = await _filterDirtyIdsService.FilterDirtyIds(queuedChanges);
 
-            List<QueueItemEventArgs> dirtyItems = queuedChanges.Where(x => !cleanIds.Contains(x.Id)).ToList();
+            List<QueueItemDTO> dirtyItems = queuedChanges.Where(x => !cleanIds.Contains(x.Id)).ToList();
 
-            List<QueueItemEventArgs> cleanItems = queuedChanges.Where(x => cleanIds.Contains(x.Id)).ToList();
+            List<QueueItemDTO> cleanItems = queuedChanges.Where(x => cleanIds.Contains(x.Id)).ToList();
 
             if (dirtyItems.Any())
             {

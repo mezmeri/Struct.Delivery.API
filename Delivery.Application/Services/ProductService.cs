@@ -9,7 +9,7 @@ namespace Delivery.Application.Services
     {
         private readonly IQueueManager _queueManager;
 
-        private event EventHandler<ProductUpdatedEventArgs> _productUpdated;
+        private event EventHandler<ProductUpdatedDTO> _productUpdated;
 
         public ProductService(IQueueManager queueManager)
         {
@@ -20,7 +20,7 @@ namespace Delivery.Application.Services
         {
             IEnumerable<string> productIds = ExtractProductIds(payload);
 
-            IEnumerable<ProductUpdatedEventArgs> productChanges = productIds.Select(id => new ProductUpdatedEventArgs
+            IEnumerable<ProductUpdatedDTO> productChanges = productIds.Select(id => new ProductUpdatedDTO
             {
                 Id = id,
                 EventType = eventType,

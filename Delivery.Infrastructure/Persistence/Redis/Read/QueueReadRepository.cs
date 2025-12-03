@@ -24,9 +24,9 @@ namespace Delivery.Infrastructure.Persistence.Redis.Read
             _database = redis.GetDatabase();
         }
 
-        public async Task<IEnumerable<QueueItemEventArgs>> GetQueueUpdates(int batchSize = 100)
+        public async Task<IEnumerable<QueueItemDTO>> GetQueueUpdates(int batchSize = 100)
         {
-            List<QueueItemEventArgs> events = new List<QueueItemEventArgs>();
+            List<QueueItemDTO> events = new List<QueueItemDTO>();
 
             for (int i = 0; i < batchSize; i++)
             {
@@ -37,7 +37,7 @@ namespace Delivery.Infrastructure.Persistence.Redis.Read
                     break;
                 }
 
-                QueueItemEventArgs? queueItem = JsonSerializer.Deserialize<QueueItemEventArgs>(item);
+                QueueItemDTO? queueItem = JsonSerializer.Deserialize<QueueItemDTO>(item);
                 if (queueItem != null)
                 {
                     events.Add(queueItem);

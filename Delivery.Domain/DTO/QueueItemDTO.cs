@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Delivery.Domain.Events
 {
-    public class QueueItemEventArgs : EventArgs
+    public class QueueItemDTO
     {
         public string Id { get; set; }
         public string EventType { get; set; }
