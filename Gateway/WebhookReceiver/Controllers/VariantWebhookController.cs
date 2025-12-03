@@ -2,6 +2,7 @@
 using System.Text.Json;
 using Delivery.Application.Services;
 using Microsoft.AspNetCore.Authorization;
+using System.Runtime.CompilerServices;
 
 namespace WebhookReceiver.Controllers
 {
@@ -19,14 +20,14 @@ namespace WebhookReceiver.Controllers
         }
 
         [HttpPost("variantUpdate")]
-        public async Task<IActionResult> VariantUpdate([FromBody] JsonElement payload)
+        public async Task<IActionResult> VariantUpdate([FromHeader(Name = "x-event-key")] string eventType, [FromBody] JsonElement payload)
         {
             try
             {
                 _logger.LogInformation("Received Variant webhook. Payload length: {Len}", payload.GetRawText()?.Length ?? 0);
                 _logger.LogDebug("Variant payload: {Payload}", payload.GetRawText());
 
-                await _variantService.HandleWebhookAsync(payload);
+                await _variantService.HandleWebhookAsync(payload, eventType);
 
                 _logger.LogInformation("Variant webhook handled and accepted.");
                 return Accepted();

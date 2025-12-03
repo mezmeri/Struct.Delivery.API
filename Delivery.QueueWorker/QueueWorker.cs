@@ -8,7 +8,7 @@ namespace Delivery.QueueWorker
 {
     public class QueueWorker
     {
-        public async Task GetChangesASync()
+        public async Task GetChanges()
         {
             await Task.Delay(0);
         }

@@ -5,16 +5,19 @@ using System.Text;
 using System.Threading.Tasks;
 using Delivery.Application.Interfaces.Repositories;
 using Struct.App.Api.Models.Product;
+using Struct.App.Api.Models.Variant;
 
 namespace Delivery.Application.Services
 {
     public class PimApiService
     {
         private readonly IProductReadRepository _productReadRepository;
+        private readonly IVariantReadRepository _variantReadRepository;
 
-        public PimApiService(IProductReadRepository productReadRepository)
+        public PimApiService(IProductReadRepository productReadRepository, IVariantReadRepository variantReadRepository)
         {
             _productReadRepository = productReadRepository;
+            _variantReadRepository = variantReadRepository;
         }
         public async Task<List<ProductModel>> GetProductDataAsync(IEnumerable<string> ids)
         {
@@ -22,6 +25,12 @@ namespace Delivery.Application.Services
 
             return await _productReadRepository.GetPimData(productIds);
 
+        }
+
+        public async Task<List<VariantModel>> GetVariantDataAsync(IEnumerable<string> ids)
+        {
+            List<int> variantIds = ids.Select(int.Parse).ToList();
+            return await _variantReadRepository.GetPimData(variantIds);
         }
     }
 }

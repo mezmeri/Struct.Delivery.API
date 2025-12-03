@@ -16,11 +16,15 @@ namespace Delivery.Infrastructure.Managers
         private readonly IQueueReadRepository _queueReadRepository;
         private readonly IProductWriteRepository _productWriteRepository;
         private readonly IProductReadRepository _productReadRepository;
+        private readonly IVariantWriteRepository _variantWriteRepository;
+        private readonly IVariantReadRepository _variantReadRepository;
         private readonly PimApiService _pimApiService;
         private readonly FilterDirtyIdsService _filterDirtyIdsService;
 
-        public QueueManager(IQueueWriteRepository queueWriteRepository, IQueueReadRepository queueReadRepository, IProductWriteRepository productWriteRepository, IProductReadRepository productReadRepository, FilterDirtyIdsService filterDirtyIdsService, PimApiService pimApiService)
+        public QueueManager(IVariantWriteRepository variantWriteRepository, IVariantReadRepository variantReadRepository, IQueueWriteRepository queueWriteRepository, IQueueReadRepository queueReadRepository, IProductWriteRepository productWriteRepository, IProductReadRepository productReadRepository, FilterDirtyIdsService filterDirtyIdsService, PimApiService pimApiService)
         {
+            _variantWriteRepository = variantWriteRepository;
+            _variantReadRepository = variantReadRepository;
             _queueWriteRepository = queueWriteRepository;
             _queueReadRepository = queueReadRepository;
             _productWriteRepository = productWriteRepository;
@@ -70,6 +74,10 @@ namespace Delivery.Infrastructure.Managers
                         case "products:updated":
                             var products = await _pimApiService.GetProductDataAsync(ids);
                             await _productWriteRepository.CacheUpdates(products);
+                            break;
+                        case "variants:updated":
+                            var variants = await _pimApiService.GetVariantDataAsync(ids);
+                            await _variantWriteRepository.CacheUpdates(variants);
                             break;
                         default:
                             break;

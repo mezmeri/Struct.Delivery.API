@@ -1,4 +1,6 @@
 ﻿using Delivery.Application.Interfaces.Managers;
+using Delivery.Domain.Events;
+using Delivery.Domain.Enum;
 using System.Text.Json;
 
 namespace Delivery.Application.Services
@@ -12,14 +14,17 @@ namespace Delivery.Application.Services
             this.queueManager = queueManager;
         }
 
-        public async Task HandleWebhookAsync (JsonElement payload)
+        public async Task HandleWebhookAsync (JsonElement payload, string eventType)
         {
-            var variantIds = ExtractVariantIds(payload);
-            if (!variantIds.Any())
+            IEnumerable<string> variantIds = ExtractVariantIds(payload);
+
+            IEnumerable<VariantUpdated> variantChanges = variantIds.Select(id => new VariantUpdated
             {
-                return;
-            }
-            await queueManager.EnqueueUpdatesAsync(variantIds);
+                Id = id,
+                EventType = eventType,
+                EntityType = EntityType.Variant
+            });
+            await queueManager.EnqueueUpdatesAsync(variantChanges);
         }
 
         private IEnumerable<string> ExtractVariantIds(JsonElement payload)
