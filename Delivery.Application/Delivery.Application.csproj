@@ -14,4 +14,8 @@
     <PackageReference Include="Struct.App.Api.Client" Version="4.0.9" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Delivery.Domain\Delivery.Domain.csproj" />
+  </ItemGroup>
+
 </Project>

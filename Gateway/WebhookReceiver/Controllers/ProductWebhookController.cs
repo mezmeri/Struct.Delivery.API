@@ -20,10 +20,10 @@ namespace WebhookReceiver.Controllers
         }
 
         [HttpPost("productUpdate")]
-        public async Task<IActionResult> ProductUpdate([FromBody] JsonElement payload)
+        public async Task<IActionResult> ProductUpdate([FromHeader(Name = "x-event-key")] string eventType, [FromBody] JsonElement payload)
         {
+            await _productService.HandleWebhookAsync(eventType, payload);
             _logger.LogInformation("Received product update webhook: {Payload}", payload.ToString());
-            await _productService.HandleWebhookAsync(payload);
 
             return Accepted();
         }
