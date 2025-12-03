@@ -10,18 +10,32 @@ namespace WebhookReceiver.Controllers
     public class VariantWebhookController : ControllerBase
     {
         private readonly VariantService _variantService;
+        private readonly ILogger<VariantWebhookController> _logger;
 
-        public VariantWebhookController(VariantService variantService)
+        public VariantWebhookController(VariantService variantService, ILogger<VariantWebhookController> logger)
         {
             _variantService = variantService;
+            _logger = logger;
         }
 
-    [HttpPost("variantUpdate")]
+        [HttpPost("variantUpdate")]
         public async Task<IActionResult> VariantUpdate([FromBody] JsonElement payload)
         {
-            await _variantService.HandleWebhookAsync(payload);
+            try
+            {
+                _logger.LogInformation("Received Variant webhook. Payload length: {Len}", payload.GetRawText()?.Length ?? 0);
+                _logger.LogDebug("Variant payload: {Payload}", payload.GetRawText());
 
-            return Accepted();
+                await _variantService.HandleWebhookAsync(payload);
+
+                _logger.LogInformation("Variant webhook handled and accepted.");
+                return Accepted();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling Variant webhook.");
+                return StatusCode(500);
+            }
         }
     }
 }

@@ -8,6 +8,9 @@ namespace Delivery.QueueWorker
 {
     public class QueueWorker
     {
-        //public async Task ProcessQueueAsync() { } TO BE IMPLEMENTED
+        public async Task GetChangesASync()
+        {
+            await Task.Delay(0);
+        }
     }
 }
