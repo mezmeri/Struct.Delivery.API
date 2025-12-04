@@ -13,72 +13,15 @@ namespace Delivery.Infrastructure.Managers
     public class QueueManager : IQueueManager
     {
         private readonly IQueueWriteRepository _queueWriteRepository;
-        private readonly IQueueReadRepository _queueReadRepository;
-        private readonly IProductWriteRepository _productWriteRepository;
-        private readonly IProductReadRepository _productReadRepository;
-        private readonly PimApiService _pimApiService;
-        private readonly FilterDirtyIdsService _filterDirtyIdsService;
 
-        public QueueManager(IQueueWriteRepository queueWriteRepository, IQueueReadRepository queueReadRepository, IProductWriteRepository productWriteRepository, IProductReadRepository productReadRepository, FilterDirtyIdsService filterDirtyIdsService, PimApiService pimApiService)
+        public QueueManager(IQueueWriteRepository queueWriteRepository)
         {
-            _queueWriteRepository = queueWriteRepository;
-            _queueReadRepository = queueReadRepository;
-            _productWriteRepository = productWriteRepository;
-            _productReadRepository = productReadRepository;
-            _filterDirtyIdsService = filterDirtyIdsService;
-            _pimApiService = pimApiService;
+            _queueWriteRepository = queueWriteRepository;  
         }
 
         public async Task EnqueueUpdatesAsync(IEnumerable<QueueItemDTO> events)
         {
-            await _queueWriteRepository.AddToQueueAsync(events);
-
-            await ProcessQueueAsync();
+            await _queueWriteRepository.AddToQueueAsync(ids);   
         }
-
-        public async Task ProcessQueueAsync()
-        {
-            IEnumerable<QueueItemDTO> queuedChanges = await _queueReadRepository.GetQueueUpdates(100);
-
-            if (!queuedChanges.Any())
-            {
-                return;
-            }
-
-            IEnumerable<string> cleanIds = await _filterDirtyIdsService.FilterDirtyIds(queuedChanges);
-
-            List<QueueItemDTO> dirtyItems = queuedChanges.Where(x => !cleanIds.Contains(x.Id)).ToList();
-
-            List<QueueItemDTO> cleanItems = queuedChanges.Where(x => cleanIds.Contains(x.Id)).ToList();
-
-            if (dirtyItems.Any())
-            {
-                await _queueWriteRepository.RequeueItemsAsync(dirtyItems);
-            }
-
-            if (cleanIds.Any())
-            {
-                var groupedEvents = cleanItems.GroupBy(x => x.EventType);
-
-                foreach (var group in groupedEvents)
-                {
-                    string eventType = group.Key;
-                    List<string> ids = group.Select(x => x.Id).ToList();
-
-                    switch (eventType)
-                    {
-                        case "products:updated":
-                            var products = await _pimApiService.GetProductDataAsync(ids);
-                            await _productWriteRepository.CacheUpdates(products);
-                            break;
-                        default:
-                            break;
-                    }
-
-                    await _queueWriteRepository.RemoveFromQueueAsync(ids);
-                }
-            }
-        } 
-            
     }
 }
