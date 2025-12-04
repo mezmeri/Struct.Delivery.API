@@ -1,6 +1,7 @@
 ﻿using Delivery.Application.Interfaces.Repositories;
 using Delivery.Application.Services;
 using Delivery.Domain.Events;
+using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 using Struct.App.Api.Models.Product;
 using System;
@@ -17,11 +18,13 @@ namespace Delivery.Infrastructure.Persistence.Redis.Read
         private readonly IDatabase _database;
 
         private string _listKey = "queue:events";
-        private string _sortedSetKey = "queue:events:timestamps";
+        private string _hashSetKey = "queue:idmap";
+        private readonly ILogger<QueueReadRepository> _logger;
 
-        public QueueReadRepository(IConnectionMultiplexer redis)
+        public QueueReadRepository(IConnectionMultiplexer redis, ILogger<QueueReadRepository> logger)
         {
             _database = redis.GetDatabase();
+            _logger = logger;
         }
 
         public async Task<IEnumerable<QueueItemDTO>> GetQueueUpdates(int batchSize = 100)
@@ -43,7 +46,9 @@ namespace Delivery.Infrastructure.Persistence.Redis.Read
                     events.Add(queueItem);
                 }
             }
-            
+
+            _logger.LogInformation($"Popped {events.Count()} items from queue");
+
             return events;
         }
 
@@ -53,13 +58,18 @@ namespace Delivery.Infrastructure.Persistence.Redis.Read
 
             foreach (string id in ids)
             {
-                double? score = await _database.SortedSetScoreAsync(_sortedSetKey, id);
-
-                if (score.HasValue)
+                RedisValue json = await _database.HashGetAsync(_hashSetKey, id);
+                if (!json.IsNullOrEmpty)
                 {
-                    results[id] = (long)score.Value;
+                    var obj = JsonSerializer.Deserialize<QueueItemDTO>(json);
+                    if (obj != null)
+                    {
+                        results[id] = obj.Timestamp;
+                    }
                 }
             }
+
+            _logger.LogInformation($"Latest timestamp retrieved");
 
             return results;
         }

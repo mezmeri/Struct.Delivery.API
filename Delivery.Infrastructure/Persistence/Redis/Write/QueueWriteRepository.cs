@@ -1,99 +1,101 @@
 ﻿using Delivery.Application.Interfaces.Repositories;
-using StackExchange.Redis;
 using Delivery.Application.Services;
+using Delivery.Domain.Events;
+using Microsoft.Extensions.Logging;
+using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using Delivery.Domain.Events;
-using System.Text.Json.Nodes;
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Threading.Tasks;
 
 namespace Delivery.Infrastructure.Persistence.Redis.Write
 {
     public class QueueWriteRepository : IQueueWriteRepository
     {
         private readonly IDatabase _database;
-
+        private readonly ILogger<QueueWriteRepository> _logger;
         private string _listKey = "queue:events";
-        private string _sortedSetKey = "queue:events:timestamps";
         private string _hashSetKey = "queue:idmap";
 
-        public QueueWriteRepository(IConnectionMultiplexer redis)
+        public QueueWriteRepository(IConnectionMultiplexer redis, ILogger<QueueWriteRepository> logger)
         {
             _database = redis.GetDatabase();
+            _logger = logger;
         }
 
         public async Task AddToQueueAsync(IEnumerable<QueueItemDTO> events)
         {
             long timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
-            List<RedisValue> newItemsToPush = new List<RedisValue>();
+            List<RedisValue> itemsToPush = new List<RedisValue>();
 
-            foreach (var obj in events)
+            foreach (var singularEvent in events)
             {
-                obj.Timestamp = timestamp;
+                singularEvent.Timestamp = timestamp;
 
-                string jsonObj = JsonSerializer.Serialize(obj);
+                string jsonEvent = JsonSerializer.Serialize(singularEvent);
 
-                RedisValue oldJson = await _database.HashGetAsync(_hashSetKey, obj.Id);
+                await _database.HashSetAsync(_hashSetKey, singularEvent.Id, jsonEvent);
 
-                bool wasAlreadyQueued = !oldJson.IsNullOrEmpty;
+                itemsToPush.Add(jsonEvent);
 
-                if (wasAlreadyQueued)
-                {
-                    await _database.SortedSetRemoveAsync(_sortedSetKey, oldJson);
-                }
-
-                await _database.SortedSetAddAsync(_sortedSetKey, jsonObj, timestamp);
-
-                await _database.HashSetAsync(_hashSetKey, obj.Id, jsonObj);
-
-                if (!wasAlreadyQueued)
-                {
-                    newItemsToPush.Add(jsonObj);
-                }
+                _logger.LogInformation($"Added/Updated event for ID {singularEvent.Id} at timestamp {timestamp}");
             }
 
 
-            if (newItemsToPush.Count > 0)
+            if (itemsToPush.Count > 0)
             {
-                await _database.ListRightPushAsync(_listKey, newItemsToPush.ToArray());
+                await _database.ListRightPushAsync(_listKey, itemsToPush.ToArray());
+
+                _logger.LogInformation($"Pushed {itemsToPush.Count()} items to list");
             }
 
         }
 
-        public async Task RemoveFromQueueAsync(IEnumerable<string> ids)
+        public async Task RemoveFromQueueAsync(IEnumerable<QueueItemDTO> processedItems)
         {
+            IEnumerable<IGrouping<string, QueueItemDTO>> grouped = processedItems.GroupBy(p => p.Id);
 
-            foreach (var id in ids)
+            foreach (var group in grouped)
             {
-                RedisValue jsonObj = await _database.HashGetAsync(_hashSetKey, id);
+                string id = group.Key;
+                long processedTimestamp = group.Max(x => x.Timestamp);
 
-                await _database.SortedSetRemoveAsync(_sortedSetKey, jsonObj);
+                RedisValue latestJsonItem = await _database.HashGetAsync(_hashSetKey, id);
 
-                await _database.HashDeleteAsync("queue:idmap", id);
+                QueueItemDTO latestItem = JsonSerializer.Deserialize<QueueItemDTO>(latestJsonItem);
+
+                if (latestItem.Timestamp > processedTimestamp)
+                {
+                    await _database.ListRightPushAsync(_listKey, latestJsonItem);
+                    _logger.LogInformation($"Requeued newer version of ID {id} with timestamp {latestItem.Timestamp}");
+                }
+                else
+                {
+                    await _database.HashDeleteAsync(_hashSetKey, id);
+                    _logger.LogInformation($"Removed processed ID {id} from hash");
+                }
             }
         }
 
         public async Task RequeueItemsAsync(IEnumerable<QueueItemDTO> items)
         {
-            var toPush = new List<RedisValue>();
+            IEnumerable<string> ids = items.Select(i => i.Id).Distinct();
+            List<RedisValue> toPush = new List<RedisValue>();
 
-            foreach (var item in items)
+            foreach (var id in ids)
             {
-                RedisValue json = await _database.HashGetAsync(_hashSetKey, item.Id);
-                if (json.IsNullOrEmpty)
-                    continue;
+                var latestJsonItem = await _database.HashGetAsync(_hashSetKey, id);
 
-                double? timestamp = await _database.SortedSetScoreAsync(_sortedSetKey, item.Id);
-                if (!timestamp.HasValue)
-                    continue;
+                if (!latestJsonItem.IsNullOrEmpty)
+                {
+                    toPush.Add(latestJsonItem);
 
-                item.Timestamp = (long)timestamp.Value;
-
-                toPush.Add(json);
+                    _logger.LogInformation($"Requeued latest item for ID {id}");
+                }
             }
 
             if (toPush.Count > 0)

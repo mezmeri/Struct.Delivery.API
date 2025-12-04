@@ -21,7 +21,7 @@ namespace Delivery.Infrastructure.Managers
 
         public async Task EnqueueUpdatesAsync(IEnumerable<QueueItemDTO> events)
         {
-            await _queueWriteRepository.AddToQueueAsync(ids);   
+            await _queueWriteRepository.AddToQueueAsync(events);   
         }
     }
 }

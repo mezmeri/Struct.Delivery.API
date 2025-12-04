@@ -9,8 +9,6 @@ namespace Delivery.Application.Services
     {
         private readonly IQueueManager _queueManager;
 
-        private event EventHandler<ProductUpdatedDTO> _productUpdated;
-
         public ProductService(IQueueManager queueManager)
         {
             _queueManager = queueManager;
@@ -26,11 +24,6 @@ namespace Delivery.Application.Services
                 EventType = eventType,
                 EntityType = EntityType.Product
             });
-
-            foreach (var productChange in productChanges)
-            {
-                _productUpdated?.Invoke(this, productChange);
-            }
 
             await _queueManager.EnqueueUpdatesAsync(productChanges);
 

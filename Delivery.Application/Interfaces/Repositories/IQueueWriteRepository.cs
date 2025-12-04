@@ -10,7 +10,7 @@ namespace Delivery.Application.Interfaces.Repositories
     public interface IQueueWriteRepository
     {
         Task AddToQueueAsync(IEnumerable<QueueItemDTO> events);
-        Task RemoveFromQueueAsync(IEnumerable<string> ids);
+        Task RemoveFromQueueAsync(IEnumerable<QueueItemDTO> processedItems);
         Task RequeueItemsAsync(IEnumerable<QueueItemDTO> items);
     }
 }
