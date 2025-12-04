@@ -5,7 +5,9 @@ namespace Delivery.Application.Interfaces.Managers
     public interface IQueueManager
     {
         //Task EnqueueUpdatesAsync(IEnumerable<string> ids);
-        Task EnqueueUpdatesAsync(IEnumerable<ProductChangeQueueItem> changes);
+        
+        // For test af productchanges
+        Task EnqueueEntityUpdatesAsync(IEnumerable<EntityItem> changes);
 
     }
 }

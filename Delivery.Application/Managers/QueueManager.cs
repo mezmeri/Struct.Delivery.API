@@ -32,27 +32,29 @@ namespace Delivery.Infrastructure.Managers
             _logger = logger;
         }
 
-
-        public async Task EnqueueUpdatesAsync(IEnumerable<ProductChangeQueueItem> changes)
+        public async Task EnqueueEntityUpdatesAsync(IEnumerable<EntityItem> changes)
         {
-            await _queueWriteRepository.AddToQueueAsync(changes);
+            await _queueWriteRepository.AddEntityUpdatesToQueueAsync(changes);
 
-            await ProcessQueueAsync();
+            await Task.Delay(9000);
+
+            await ProcessEntityUpdateQueueAsync();
         }
 
-        public async Task ProcessQueueAsync()
+        public async Task ProcessEntityUpdateQueueAsync()
         {
 
-            IEnumerable<ProductChangeQueueItem> queuedChanges = await _queueReadRepository.GetProductChanges(100);
+            IEnumerable<EntityItem> queuedChanges = await _queueReadRepository.GetEntityUpdateChanges(100);
             if (!queuedChanges.Any())
             {
                 return;
             }
 
-            var queuedTuples = queuedChanges.Select(x => (x.ProductId, x.Timestamp));
+            // Added variable for evt debugging eller logging.
+            var queuedTuples = queuedChanges.Select(x => (x.Id, x.Timestamp));
             IEnumerable<string> cleanIds = await _filterDirtyIdsService.FilterDirtyIds(queuedTuples);
 
-            List<string> dirtyIds = queuedChanges.Select(x => x.ProductId).Except(cleanIds).ToList();
+            List<string> dirtyIds = queuedChanges.Select(x => x.Id).Except(cleanIds).ToList();
 
             if (dirtyIds.Any())
             {
@@ -61,7 +63,7 @@ namespace Delivery.Infrastructure.Managers
 
             if (cleanIds.Any())
             {
-                var data = await _pimApiService.GetProductDataAsync(cleanIds);
+                var data = await _pimApiService.GetEntityDataAsync(cleanIds);
 
                 await _productWriteRepository.CacheUpdates(data);
 

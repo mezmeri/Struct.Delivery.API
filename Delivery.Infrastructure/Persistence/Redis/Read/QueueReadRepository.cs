@@ -27,10 +27,10 @@ namespace Delivery.Infrastructure.Persistence.Redis.Read
             _logger = logger;
         }
 
-        public async Task<IEnumerable<ProductChangeQueueItem>> GetProductChanges(int batchSize = 100)
+        public async Task<IEnumerable<EntityItem>> GetEntityUpdateChanges(int batchSize = 100)
         {
 
-            var result = new List<ProductChangeQueueItem>();
+            var result = new List<EntityItem>();
 
             for (int i = 0; i < batchSize; i++)
             {
@@ -44,15 +44,13 @@ namespace Delivery.Infrastructure.Persistence.Redis.Read
                 string productId = item.ToString();
                 long timestamp = (long)(await _database.SortedSetScoreAsync(ProductTimestamps, item)).GetValueOrDefault();
 
-                var queueItem = new ProductChangeQueueItem
+                var queueItem = new EntityItem
                 {
-                    ProductId = productId,
+                    Id = productId,
                     Timestamp = timestamp
                 };
 
                 // Finder ændrede attributter fra Redis
-                // Might need some work, er i tvivl om placering af logik. 
-                // Got help from CoPilot, så lad os lige vende tilbage til denne del.
                 string attributesJson = await _database.StringGetAsync($"{ProductAttributeChanges}:{productId}");
 
                 if (!string.IsNullOrEmpty(attributesJson))

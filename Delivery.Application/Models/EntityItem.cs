@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace Delivery.Application.Models
 {
-    public class ProductChangeQueueItem
+    public class EntityItem
     {
         
-        public string ProductId { get; set; }
+        public string Id { get; set; }
 
         public long Timestamp { get; set; }
 
@@ -19,6 +19,6 @@ namespace Delivery.Application.Models
         public Dictionary<string, object> ChangedAttributes { get; set; } = new Dictionary<string, object>();
 
        // Need this later maybe? 
-        public string ProductModelType { get; set; }
+        public string EnityModelType { get; set; }
     }
 }

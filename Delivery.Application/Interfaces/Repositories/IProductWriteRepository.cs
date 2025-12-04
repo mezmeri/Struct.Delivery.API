@@ -10,6 +10,5 @@ namespace Delivery.Application.Interfaces.Repositories
     public interface IProductWriteRepository
     {
         Task CacheUpdates(IEnumerable<ProductModel> products);
-
     }
 }

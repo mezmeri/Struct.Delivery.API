@@ -19,7 +19,8 @@ namespace WebhookReceiver.Controllers
         [HttpPost("productUpdate")]
         public async Task<IActionResult> ProductUpdate([FromBody] JsonElement payload)
         {
-            await _productService.HandleWebhookAsync(payload);
+
+            await _productService.HandleAttributeWebhookAsync(payload);
 
             return Accepted();
         }

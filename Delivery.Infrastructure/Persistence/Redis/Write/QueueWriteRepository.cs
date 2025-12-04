@@ -26,9 +26,18 @@ namespace Delivery.Infrastructure.Persistence.Redis.Write
             _logger = logger;
         }
 
+        public async Task AddToQueueAsync(IEnumerable<string> ids)
+        {
+            var changes = ids.Select(id => new EntityItem
+            {
+                Id = id,
+                Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds()
+            });
 
+            await AddEntityUpdatesToQueueAsync(changes);
+        }
 
-        public async Task AddToQueueAsync(IEnumerable<ProductChangeQueueItem> changes)
+        public async Task AddEntityUpdatesToQueueAsync(IEnumerable<EntityItem> changes)
         {
             var changesList = changes.ToList();
 
@@ -38,15 +47,15 @@ namespace Delivery.Infrastructure.Persistence.Redis.Write
                 return;
             }
 
-            
+
             var tasks = new List<Task>();
 
             foreach (var change in changesList)
             {
-                var id = change.ProductId;
+                var id = change.Id;
                 long timestamp = change.Timestamp > 0 ? change.Timestamp : DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
-                // Add to set (Flag for new entry)
+                // Add to set (Flag for new entry af entities)
                 var addedFlag = await _database.SetAddAsync(ProductUpdateQueueName, id);
 
                 if (addedFlag)
@@ -56,7 +65,7 @@ namespace Delivery.Infrastructure.Persistence.Redis.Write
                     // Store timestamp
                     tasks.Add(_database.SortedSetAddAsync(ProductTimestamps, id, timestamp));
 
-                    // Store attribute changes as JSON if available
+                    // Store attribute changes som Json hvis der findes ændringer
                     if (change.ChangedAttributes != null && change.ChangedAttributes.Any())
                     {
                         string attributesJson = JsonSerializer.Serialize(change.ChangedAttributes);

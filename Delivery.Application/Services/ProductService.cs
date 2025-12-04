@@ -17,29 +17,29 @@ namespace Delivery.Application.Services
             _logger = logger;
         }
 
-        public async Task HandleWebhookAsync(JsonElement payload)
+        public async Task HandleAttributeWebhookAsync(JsonElement payload)
         {
-            var productChanges = ExtractProductChanges(payload);
+            var productChanges = ExtractEntityChanges(payload);
 
             if (!productChanges.Any())
             {
                 return;
             }
 
-            await _queueManager.EnqueueUpdatesAsync(productChanges);
+            await _queueManager.EnqueueEntityUpdatesAsync(productChanges);
         }
 
-        private IEnumerable<ProductChangeQueueItem> ExtractProductChanges(JsonElement payload)
+        private IEnumerable<EntityItem> ExtractEntityChanges(JsonElement payload)
         {
-            var changes = new List<ProductChangeQueueItem>();
+            var changes = new List<EntityItem>();
 
             if (payload.TryGetProperty("ProductChanges", out var productChanges))
             {
                 //Iterer over hvert item (ProductChanges Prop) i array.
                 foreach (var change in productChanges.EnumerateArray())
                 {
-                    //Kald på ExtractSingleProductChange for at få et ProductChangeQueueItem    
-                    var queueItem = ExtractSingleProductChange(change);
+                    //Kald på ExtractSingleAttributeChange for at få et ProductChangeQueueItem    
+                    var queueItem = ExtractSingleEntityChange(change);
                     if (queueItem != null)
                     {
                         changes.Add(queueItem);
@@ -52,10 +52,10 @@ namespace Delivery.Application.Services
                 foreach(var id in ids.EnumerateArray())
                 {
                     var productId = id.ToString();
-                    changes.Add(new ProductChangeQueueItem
+                    changes.Add(new EntityItem
                     {
-                        ProductId = productId,
-                        Timestamp = DateTimeOffset.Now.ToUnixTimeSeconds(),
+                        Id = productId,
+                        Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds(),
 
                     });
 
@@ -63,26 +63,26 @@ namespace Delivery.Application.Services
             }
             return changes;
         }
-        private ProductChangeQueueItem ExtractSingleProductChange(JsonElement change)
+        private EntityItem ExtractSingleEntityChange(JsonElement change)
         {
             if (!change.TryGetProperty("Id", out var id))
             {
                 return null;
             }
 
-            var queueItem = new ProductChangeQueueItem
+            var queueItem = new EntityItem
             {
-                ProductId = id.ToString(),
+                Id = id.ToString(),
                 Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds()
             };
 
             //Forsøger prop "ProductModelType" (For later implementation)
             if (change.TryGetProperty("ProductModelType", out var modelType))
             {
-                queueItem.ProductModelType = modelType.GetString();
+                queueItem.EnityModelType = modelType.GetString();
             }
 
-            // Forsøger for UpdatedAttributes (Struct PIM format)
+            // Forsøger for UpdatedAttributes
             if (change.TryGetProperty("UpdatedAttributes", out var updatedAttributes))
             {
                 // Itererer over hvert item i arrayet
@@ -94,7 +94,7 @@ namespace Delivery.Application.Services
                     queueItem.ChangedAttributes[attributeName] = null;
                 }
             }
-            // Fallback, checker "Attributes" istedet
+            // Fallback, checker alt med "Attributes" istedet
             else if (change.TryGetProperty("Attributes", out var attributes))
             {
                 ExtractAttributes(queueItem, attributes);
@@ -103,9 +103,8 @@ namespace Delivery.Application.Services
             return queueItem;
         }
 
-        //Tager JSON-object og tilføjer til ChangedAttributes Dictionary
-        // for ProductChangeQueueItem
-        private void ExtractAttributes(ProductChangeQueueItem queueItem, JsonElement attributes)
+        //Tager JSON-object og tilføjer til ChangedAttributes Dictionary i EntityItem
+        private void ExtractAttributes(EntityItem queueItem, JsonElement attributes)
         {
             foreach (var attr in attributes.EnumerateObject())
             {
@@ -125,7 +124,7 @@ namespace Delivery.Application.Services
                 JsonValueKind.True => true,
                 JsonValueKind.False => false,
                 JsonValueKind.Array => element.EnumerateArray().Select(DeserializeAttributeValue).ToList(),
-                JsonValueKind.Object => element.GetRawText(), // Store complex objects as JSON string
+                JsonValueKind.Object => element.GetRawText(),
                 JsonValueKind.Null => null,
                 _ => element.GetRawText()
             };
