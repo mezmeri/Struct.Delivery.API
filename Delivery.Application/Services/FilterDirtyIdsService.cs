@@ -29,7 +29,7 @@ namespace Delivery.Application.Services
             IEnumerable<string> cleanIds = items.Where(x => !latestTimestamps.TryGetValue(x.Id, out var latest) || x.Timestamp >= latest)
                 .Select(x => x.Id).Distinct().ToList();
 
-            _logger.LogInformation($"Filtered {cleanIds.Count()} clean and {ids.Count - cleanIds.Count()} dirty items");
+            _logger.LogInformation($"Filtered {cleanIds.Count()} clean and {ids.Count() - cleanIds.Count()} dirty items");
 
             return cleanIds;
         }
