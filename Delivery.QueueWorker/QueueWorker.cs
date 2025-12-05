@@ -5,10 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using Delivery.Application.Interfaces.Repositories;
 using Delivery.Application.Services;
+using Microsoft.Extensions.Hosting;
 
 namespace Delivery.QueueWorker
 {
-    public class QueueWorker
+    public class QueueWorker : BackgroundService
     {
 
         private readonly IQueueReadRepository _queueReadRepository;
@@ -56,6 +57,17 @@ namespace Delivery.QueueWorker
 
             //    await _queueReadRepository.RemoveFromQueueAsync(cleanIds);
             //}
+        }
+
+        /// <summary>
+        /// Inherited from the BackgroundService class, which are a part of the whole Host environment setup in Program.cs. We might have to use this?
+        /// </summary>
+        /// <param name="stoppingToken"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        protected override Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            throw new NotImplementedException();
         }
     }
 }

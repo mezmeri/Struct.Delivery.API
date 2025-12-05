@@ -1,7 +1,9 @@
 ﻿using Delivery.Application.Interfaces.Repositories;
 using Delivery.Composition;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using StackExchange.Redis;
 
 namespace Delivery.QueueWorker
 {
@@ -10,18 +12,29 @@ namespace Delivery.QueueWorker
         static async Task Main(string[] args)
         {
             IServiceCollection services = new ServiceCollection();
-            services.AddInfrastructureDependencies();
 
-            IServiceProvider serviceProvider = services.BuildServiceProvider();
-
-            QueueWorker worker = (QueueWorker) ActivatorUtilities.CreateInstance(serviceProvider, typeof(QueueWorker));
+            IHost host = Host.CreateDefaultBuilder(args)
+                .ConfigureServices((hostContext, services) =>
+                {
+                    var connectionstring = hostContext.Configuration.GetConnectionString("REDIS_URL");
+                    services.AddSingleton<IConnectionMultiplexer>(sp =>
+                    {
+                        if (string.IsNullOrEmpty(connectionstring))
+                        {
+                            throw new InvalidOperationException("REDIS_URL connection string is missing or empty.");
+                        }
+                        return ConnectionMultiplexer.Connect(connectionstring);
+                    });
+                    
+                    services.AddInfrastructureDependencies();
+                    services.AddHostedService<QueueWorker>();
+                })
+                .Build();
 
             CancellationTokenSource tokenSource = new CancellationTokenSource();
             while (!tokenSource.Token.IsCancellationRequested)
             {
-                //await worker.ProcessQueueAsync(); // QueueWorker should probably also have the token as a parameter in its constructor so that it can react if the token gets cancelled.
-
-                // Specify something to trigger the cancellation of the token below the call.
+                // Since we are using the Host above, which requires that the service inherits the backgroundservice class, which inherits the ExecuteAsync() method - maybe we should use that method as the entry point to the queue handling?
             }
         }
     }
