@@ -1,4 +1,6 @@
 ﻿using Delivery.Application.Interfaces.Managers;
+using Delivery.Domain.Events;
+using Delivery.Domain.Enum;
 using System.Text.Json;
 
 namespace Delivery.Application.Services
@@ -12,15 +14,18 @@ namespace Delivery.Application.Services
             _queueManager = queueManager;
         }
 
-        public async Task HandleWebhookAsync(JsonElement payload)
+        public async Task HandleWebhookAsync(string eventType, JsonElement payload)
         {
-            var productIds = ExtractProductIds(payload);
-            if (!productIds.Any())
-            {
-                return;
-            }
+            IEnumerable<string> productIds = ExtractProductIds(payload);
 
-            await _queueManager.EnqueueUpdatesAsync(productIds);
+            IEnumerable<ProductUpdatedDTO> productChanges = productIds.Select(id => new ProductUpdatedDTO
+            {
+                Id = id,
+                EventType = eventType,
+                EntityType = EntityType.Product
+            });
+
+            await _queueManager.EnqueueUpdatesAsync(productChanges);
 
         }
 
