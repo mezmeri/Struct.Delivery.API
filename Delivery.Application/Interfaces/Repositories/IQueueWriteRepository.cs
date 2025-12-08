@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Delivery.Domain.Events;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,8 +9,8 @@ namespace Delivery.Application.Interfaces.Repositories
 {
     public interface IQueueWriteRepository
     {
-        Task AddToQueueAsync(IEnumerable<string> ids);
-        Task RemoveFromQueueAsync(IEnumerable<string> ids);
-        Task RequeueIdsAsync(IEnumerable<string> ids);
+        Task AddToQueueAsync(IEnumerable<QueueItemDTO> events);
+        Task RemoveFromQueueAsync(IEnumerable<QueueItemDTO> processedItems);
+        Task RequeueItemsAsync(IEnumerable<QueueItemDTO> items);
     }
 }

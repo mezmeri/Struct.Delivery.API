@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Delivery.Domain.Events;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,7 +9,8 @@ namespace Delivery.Application.Interfaces.Repositories
 {
     public interface IQueueReadRepository
     {
-        Task<IEnumerable<(string, long)>> GetProductChanges(int batchSize);
+        Task<IEnumerable<QueueItemDTO>> GetQueueUpdates(int batchSize);
+        Task<Dictionary<string, long>> GetLatestTimestampsAsync(IEnumerable<string> ids);
 
     }
 }

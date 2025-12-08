@@ -1,6 +1,7 @@
 ﻿using Delivery.Application.Interfaces.Managers;
 using Delivery.Application.Interfaces.Repositories;
 using Delivery.Application.Services;
+using Delivery.Domain.Events;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,9 +19,9 @@ namespace Delivery.Infrastructure.Managers
             _queueWriteRepository = queueWriteRepository;  
         }
 
-        public async Task EnqueueUpdatesAsync(IEnumerable<string> ids)
+        public async Task EnqueueUpdatesAsync(IEnumerable<QueueItemDTO> events)
         {
-            await _queueWriteRepository.AddToQueueAsync(ids);   
+            await _queueWriteRepository.AddToQueueAsync(events);   
         }
     }
 }
