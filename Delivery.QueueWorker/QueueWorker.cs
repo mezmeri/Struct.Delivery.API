@@ -1,4 +1,5 @@
-﻿using Delivery.Application.Interfaces.Repositories;
+﻿using Delivery.Application.Interfaces.Notifier;
+using Delivery.Application.Interfaces.Repositories;
 using Delivery.Application.Services;
 using Delivery.Domain.Events;
 using Microsoft.Extensions.Logging;
@@ -18,8 +19,9 @@ namespace Delivery.QueueWorker
         private readonly FilterDirtyIdsService _filterDirtyIdsService;
         private readonly PimApiService _pimApiService;
         private readonly ILogger<QueueWorker> _logger;
+        private readonly INotifier _notifier;
 
-        public QueueWorker(IQueueReadRepository queueReadRepository, IProductWriteRepository productWriteRepository, FilterDirtyIdsService filterDirtyIdsService, PimApiService pimApiService, IQueueWriteRepository queueWriteRepository, ILogger<QueueWorker> logger)
+        public QueueWorker(IQueueReadRepository queueReadRepository, IProductWriteRepository productWriteRepository, FilterDirtyIdsService filterDirtyIdsService, PimApiService pimApiService, IQueueWriteRepository queueWriteRepository, ILogger<QueueWorker> logger, INotifier notifier)
         {
             _queueReadRepository = queueReadRepository;
             _queueWriteRepository = queueWriteRepository;
@@ -27,6 +29,7 @@ namespace Delivery.QueueWorker
             _filterDirtyIdsService = filterDirtyIdsService;
             _pimApiService = pimApiService;
             _logger = logger;
+            _notifier = notifier;
 
         }
 
@@ -78,6 +81,8 @@ namespace Delivery.QueueWorker
                     }
 
                     await _queueWriteRepository.RemoveFromQueueAsync(itemsInGroup);
+
+                    await _notifier.NotifyChangesAsync(ids, eventType, DateTimeOffset.UtcNow, entityType.ToString());
                 }
             }
         }

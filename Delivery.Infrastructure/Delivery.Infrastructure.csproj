@@ -7,8 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Managers\" />
-    <Folder Include="Dispatchers\" />
+    <Compile Remove="Dispatchers\**" />
+    <Compile Remove="Managers\**" />
+    <EmbeddedResource Remove="Dispatchers\**" />
+    <EmbeddedResource Remove="Managers\**" />
+    <None Remove="Dispatchers\**" />
+    <None Remove="Managers\**" />
   </ItemGroup>
 
   <ItemGroup>
