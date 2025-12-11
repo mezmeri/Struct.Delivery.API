@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Delivery.Application;
 using Delivery.Infrastructure;
+using Microsoft.Extensions.Configuration;
 
 namespace Delivery.Composition
 {
@@ -12,10 +13,11 @@ namespace Delivery.Composition
                 .ConfigureManagers();
         }
 
-        public static IServiceCollection AddInfrastructureDependencies(this IServiceCollection services)
+        public static IServiceCollection AddInfrastructureDependencies(this IServiceCollection services, IConfiguration configuration)
         {
             return services.ConfigureWriteRepositories()
-                .ConfigureReadRepositories();
+                .ConfigureReadRepositories()
+                .ConfigureNotifiers(configuration);
         }
     }
 }

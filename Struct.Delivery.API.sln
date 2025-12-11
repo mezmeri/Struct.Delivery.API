@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Delivery.QueueWorker", "Del
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Delivery.Domain", "Delivery.Domain\Delivery.Domain.csproj", "{2AF313ED-7C29-D40B-8738-C23FC3E42334}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Delivery.Client", "Delivery.Client\Delivery.Client.csproj", "{65BC680B-1849-40DA-AA3B-BC92BA65BD9C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -47,6 +49,10 @@ Global
 		{2AF313ED-7C29-D40B-8738-C23FC3E42334}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2AF313ED-7C29-D40B-8738-C23FC3E42334}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2AF313ED-7C29-D40B-8738-C23FC3E42334}.Release|Any CPU.Build.0 = Release|Any CPU
+		{65BC680B-1849-40DA-AA3B-BC92BA65BD9C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{65BC680B-1849-40DA-AA3B-BC92BA65BD9C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{65BC680B-1849-40DA-AA3B-BC92BA65BD9C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{65BC680B-1849-40DA-AA3B-BC92BA65BD9C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

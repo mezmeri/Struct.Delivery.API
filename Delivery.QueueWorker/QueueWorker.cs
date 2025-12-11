@@ -1,6 +1,7 @@
 ﻿using Delivery.Application.Interfaces.Notifier;
 using Delivery.Application.Interfaces.Repositories;
 using Delivery.Application.Services;
+using Delivery.Domain.Enum;
 using Delivery.Domain.Events;
 using Microsoft.Extensions.Logging;
 using System;
@@ -59,13 +60,15 @@ namespace Delivery.QueueWorker
 
             if (cleanIds.Any())
             {
-                var groupedEvents = cleanItems.GroupBy(x => x.EventType);
+                var groupedEvents = cleanItems.GroupBy(x => new { x.EventType, x.EntityType });
 
                 foreach (var group in groupedEvents)
                 {
-                    string eventType = group.Key;
+                    string eventType = group.Key.EventType;
                     List<QueueItemDTO> itemsInGroup = group.ToList();
                     List<string> ids = group.Select(x => x.Id).ToList();
+                    EntityType entityType = group.Key.EntityType;
+
 
                     _logger.LogInformation($"Processing event type {eventType} with {ids.Count()} items");
 

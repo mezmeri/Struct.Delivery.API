@@ -1,4 +1,5 @@
 ﻿using Delivery.Application.Interfaces.Notifier;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,10 +11,15 @@ namespace Delivery.Infrastructure.Notifier
 {
     public class WebhookChangeNotifier : INotifier
     {
-        HttpClient _httpClient;
-        public WebhookChangeNotifier(HttpClient httpClient) 
+        private readonly HttpClient _httpClient;
+        private readonly ILogger<WebhookChangeNotifier> _logger;
+        private readonly string _webhookUrl;
+
+        public WebhookChangeNotifier(HttpClient httpClient, ILogger<WebhookChangeNotifier> logger, string webhookUrl = "http://localhost:5001/webhook") 
         {
             _httpClient = httpClient;
+            _logger = logger;
+            _webhookUrl = webhookUrl;
         }
 
         public async Task NotifyChangesAsync(IEnumerable<string> ids, string eventType, DateTimeOffset timestamp, string entityType)
@@ -26,9 +32,30 @@ namespace Delivery.Infrastructure.Notifier
                 EntityType = entityType
             };
 
-            var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+            var json = JsonSerializer.Serialize(payload);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            await _httpClient.PostAsync("", content);
+            try
+            {
+                var response = await _httpClient.PostAsync(_webhookUrl, content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation("Succesfully notificeret, sendt til {_webhookUrl}. EventType: {EventType}, EntityType: {EntityType}, Ids: {ids.Count()}", _webhookUrl, eventType, entityType, string.Join(", ", ids));
+                }
+                else
+                {
+                    _logger.LogError("Failed to notify changes to webhook. StatusCode: {StatusCode}, EventType: {EventType}, EntityType: {EntityType}, Ids: {Ids}", response.StatusCode, eventType, entityType, string.Join(", ", ids));
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogWarning($"Failed to send webhook notification to {_webhookUrl}: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Unexpected error sending webhook notification to {_webhookUrl}");
+            }
         }
     }
 }

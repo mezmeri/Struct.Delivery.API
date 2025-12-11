@@ -16,9 +16,20 @@ namespace WebhookReceiver
             return services.AddApplicationDependencies();
         }
 
-        public static IServiceCollection ConfigureInfrastructureDependencies(this IServiceCollection services)
+        public static IServiceCollection ConfigureInfrastructureDependencies(this IServiceCollection services, IConfiguration configuration)
         {
-            return services.AddInfrastructureDependencies();
+            return services.AddInfrastructureDependencies(configuration);
+
+
         }
+
+
+        //public static IServiceCollection ConfigureInfrastructureDependencies(this IServiceCollection services, IConfiguration configuration)
+        //{
+        //    return services.AddInfrastructureDependencies();
+        //    return configuration.
+
+
+        //}
     }
 }

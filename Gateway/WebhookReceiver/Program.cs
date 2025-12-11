@@ -24,7 +24,7 @@ namespace Struct.Delivery.API
             builder.Services.AddSingleton(structApiClient);
 
             builder.Services.ConfigureApplicationDependencies();
-            builder.Services.ConfigureInfrastructureDependencies();
+            builder.Services.ConfigureInfrastructureDependencies(builder.Configuration);
 
             // Add services to the container.
             builder.Services.AddControllers();
@@ -32,10 +32,6 @@ namespace Struct.Delivery.API
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
-
-            builder.Services.ConfigureApplicationDependencies();
-            builder.Services.ConfigureInfrastructureDependencies();
-
 
             var app = builder.Build();
 
