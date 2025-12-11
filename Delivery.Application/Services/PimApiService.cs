@@ -16,7 +16,7 @@ namespace Delivery.Application.Services
         {
             _productReadRepository = productReadRepository;
         }
-        public async Task<List<ProductModel>> GetEntityDataAsync(IEnumerable<string> ids)
+        public async Task<List<ProductModel>> GetProductDataAsync(IEnumerable<string> ids)
         {
             List<int> productIds = ids.Select(int.Parse).ToList();
 
