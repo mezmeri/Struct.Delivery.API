@@ -4,6 +4,7 @@ using Delivery.Domain.Enum;
 using Delivery.Domain.Events;
 using Microsoft.Extensions.Logging;
 using Struct.App.Api.Models.Product;
+using Struct.App.Api.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -39,12 +40,12 @@ namespace Delivery.QueueWorker
         {
             IEnumerable<QueueItemDTO> queuedChanges = await _queueReadRepository.GetQueueUpdates(100);
 
-            _logger.LogInformation($"Processing queue batch of {queuedChanges.Count()} items");
-
             if (!queuedChanges.Any())
             {
                 return;
             }
+
+            _logger.LogInformation($"Processing queue batch of {queuedChanges.Count()} items");
 
             IEnumerable<string> cleanIds = await _filterDirtyIdsService.FilterDirtyIds(queuedChanges);
 
@@ -106,10 +107,20 @@ namespace Delivery.QueueWorker
         /// <param name="stoppingToken"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        protected override Task ExecuteAsync(CancellationToken stoppingToken)
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            throw new NotImplementedException();
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                try
+                { 
+                    await ProcessQueueAsync(); 
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error processing queue");
+                }
+                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+            }
         }
     }
 }
-
