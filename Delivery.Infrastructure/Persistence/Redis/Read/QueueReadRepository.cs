@@ -1,5 +1,6 @@
 ﻿using Delivery.Application.Interfaces.Repositories;
-using Delivery.Application.Models;
+using Delivery.Application.Services;
+using Delivery.Domain.Events;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 using Struct.App.Api.Models.Product;
@@ -15,11 +16,10 @@ namespace Delivery.Infrastructure.Persistence.Redis.Read
     public class QueueReadRepository : IQueueReadRepository
     {
         private readonly IDatabase _database;
+
+        private string _listKey = "queue:events";
+        private string _hashSetKey = "queue:idmap";
         private readonly ILogger<QueueReadRepository> _logger;
-        private readonly string ProductUpdateQueueName = "products:updates:pending";
-        private readonly string ProductTimestamps = "products:updates:timestamps";
-        private readonly string ProductQueueList = "products:updates:list";
-        private readonly string ProductAttributeChanges = "products:updates:attributes";
 
         public QueueReadRepository(IConnectionMultiplexer redis, ILogger<QueueReadRepository> logger)
         {
@@ -27,60 +27,52 @@ namespace Delivery.Infrastructure.Persistence.Redis.Read
             _logger = logger;
         }
 
-        public async Task<IEnumerable<EntityItem>> GetEntityUpdateChanges(int batchSize = 100)
+        public async Task <IEnumerable<QueueItemDTO>> GetQueueUpdates(int batchSize = 100)
         {
-
-            var result = new List<EntityItem>();
+            List<QueueItemDTO> events = new List<QueueItemDTO>();
 
             for (int i = 0; i < batchSize; i++)
             {
-                RedisValue item = await _database.ListLeftPopAsync(ProductQueueList);
+                RedisValue item = await _database.ListLeftPopAsync(_listKey);
 
                 if (!item.HasValue)
                 {
                     break;
                 }
 
-                string productId = item.ToString();
-                long timestamp = (long)(await _database.SortedSetScoreAsync(ProductTimestamps, item)).GetValueOrDefault();
-
-                var queueItem = new EntityItem
+                QueueItemDTO? queueItem = JsonSerializer.Deserialize<QueueItemDTO>(item);
+                if (queueItem != null)
                 {
-                    Id = productId,
-                    Timestamp = timestamp
-                };
-
-                // Finder ændrede attributter fra Redis
-                string attributesJson = await _database.StringGetAsync($"{ProductAttributeChanges}:{productId}");
-
-                if (!string.IsNullOrEmpty(attributesJson))
-                {
-                    try
-                    {
-                        queueItem.ChangedAttributes = JsonSerializer.Deserialize<Dictionary<string, object>>(attributesJson);
-
-                        _logger.LogDebug("Product {ProductId} has {Count} attribute changes: {Attributes}",
-                            productId,
-                            queueItem.ChangedAttributes?.Count ?? 0,
-                            queueItem.ChangedAttributes != null ? string.Join(", ", queueItem.ChangedAttributes.Keys) : "none");
-                    }
-                    catch (JsonException ex)
-                    {
-                        _logger.LogError(ex, "Failed to deserialize attribute changes for product {ProductId}. JSON: {Json}",
-                            productId, attributesJson);
-                    }
+                    events.Add(queueItem);
                 }
-                else
-                {
-                    _logger.LogDebug("Product {ProductId} has no attribute changes stored.", productId);
-                }
-
-                result.Add(queueItem);
             }
 
-            _logger.LogInformation("Retrieved {Count} products from Redis queue.", result.Count);
+            _logger.LogInformation($"Popped {events.Count()} items from queue");
 
-            return result;
+            return events;
         }
+
+        public async Task<Dictionary<string, long>> GetLatestTimestampsAsync(IEnumerable<string> ids)
+        {
+            Dictionary<string, long> results = new Dictionary<string, long>();
+
+            foreach (string id in ids)
+            {
+                RedisValue json = await _database.HashGetAsync(_hashSetKey, id);
+                if (!json.IsNullOrEmpty)
+                {
+                    var obj = JsonSerializer.Deserialize<QueueItemDTO>(json);
+                    if (obj != null)
+                    {
+                        results[id] = obj.Timestamp;
+                    }
+                }
+            }
+
+            _logger.LogInformation($"Latest timestamp retrieved");
+
+            return results;
+        }
+
     }
 }

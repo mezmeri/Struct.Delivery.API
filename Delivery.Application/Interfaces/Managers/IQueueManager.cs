@@ -1,13 +1,10 @@
-﻿using Delivery.Application.Models;
+﻿using Delivery.Domain.Events;
 
 namespace Delivery.Application.Interfaces.Managers
 {
     public interface IQueueManager
     {
-        //Task EnqueueUpdatesAsync(IEnumerable<string> ids);
-        
-        // For test af productchanges
-        Task EnqueueEntityUpdatesAsync(IEnumerable<EntityItem> changes);
+        Task EnqueueUpdatesAsync(IEnumerable<QueueItemDTO> events);
 
     }
 }
