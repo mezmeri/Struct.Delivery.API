@@ -9,7 +9,9 @@ namespace Delivery.Application.Interfaces.Repositories
 {
     public interface IProductWriteRepository
     {
-        Task CacheUpdates(IEnumerable<ProductModel> products);
+        Task AddToCacheAsync(IEnumerable<ProductModel> products);
+        Task UpdateToCacheAsync(IEnumerable<ProductModel> products);
+        Task DeleteFromCacheAsync(IEnumerable<string> ids);
 
     }
 }

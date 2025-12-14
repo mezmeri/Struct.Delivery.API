@@ -1,7 +1,9 @@
-﻿using Delivery.Application.Interfaces.Repositories;
+using Delivery.Application.Interfaces.Repositories;
 using Delivery.Application.Services;
+using Delivery.Domain.Enum;
 using Delivery.Domain.Events;
 using Microsoft.Extensions.Logging;
+using Struct.App.Api.Models.Product;
 using Struct.App.Api.Client;
 using System;
 using System.Collections.Generic;
@@ -60,28 +62,39 @@ namespace Delivery.QueueWorker
 
             if (cleanIds.Any())
             {
-                var groupedEvents = cleanItems.GroupBy(x => x.EventType);
+                var groupedEvents = cleanItems.GroupBy(x => new { x.EntityType, x.EventType });
 
                 foreach (var group in groupedEvents)
                 {
-                    string eventType = group.Key;
-                    List<QueueItemDTO> itemsInGroup = group.ToList();
+                    string eventType = group.Key.EventType;
+                    EntityType entityType = group.Key.EntityType;
                     List<string> ids = group.Select(x => x.Id).ToList();
 
                     _logger.LogInformation($"Processing event type {eventType} with {ids.Count()} items");
 
-                    switch (eventType)
+                    switch (entityType)
                     {
-                        case "products:updated":
-                            var products = await _pimApiService.GetProductDataAsync(ids);
-                            await _productWriteRepository.CacheUpdates(products);
+                        case EntityType.Product:
+                            List<ProductModel> products = new();
+                            
+                            if (eventType != "products:deleted")
+                            {
+                                products = (await _pimApiService.GetProductDataAsync(ids)).ToList();
+                            }
+
+                            if (eventType == "products:created")
+                                await _productWriteRepository.AddToCacheAsync(products);
+                            else if (eventType == "products:updated")
+                                await _productWriteRepository.UpdateToCacheAsync(products);
+                            else if (eventType == "products:deleted")
+                                await _productWriteRepository.DeleteFromCacheAsync(ids);
                             break;
                         default:
                             _logger.LogInformation($"No repository for event type {eventType}");
                             break;
                     }
 
-                    await _queueWriteRepository.RemoveFromQueueAsync(itemsInGroup);
+                    await _queueWriteRepository.RemoveFromQueueAsync(group);
                 }
             }
             //    await _queueReadRepository.RemoveFromQueueAsync(cleanIds);
