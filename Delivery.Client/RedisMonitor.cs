@@ -18,9 +18,7 @@ namespace Delivery.Client
             _server = redis.GetServer(redis.GetEndPoints().First());
         }
 
-        /// <summary>
-        /// Gets all cached items matching a pattern (default: products)
-        /// </summary>
+        //TBD, skal fixes med cache-logic.
         public async Task<Dictionary<string, string>> GetCachedItemsAsync(string pattern = "products:*:cached")
         {
             var results = new Dictionary<string, string>();
@@ -38,9 +36,7 @@ namespace Delivery.Client
             return results;
         }
 
-        /// <summary>
-        /// Gets all items from the queue list (ready to be processed)
-        /// </summary>
+        // Get all items fra vores Queue-List
         public async Task<List<string>> GetQueueItemsAsync(string queueKey = "queue:events")
         {
             var items = new List<string>();
@@ -57,9 +53,7 @@ namespace Delivery.Client
             return items;
         }
 
-        /// <summary>
-        /// Gets all entries from the queue ID map (latest timestamps)
-        /// </summary>
+        //Get all entries fra hashmap m. timestampt
         public async Task<Dictionary<string, string>> GetQueueIdMapAsync(string hashKey = "queue:idmap")
         {
             var results = new Dictionary<string, string>();
@@ -73,9 +67,7 @@ namespace Delivery.Client
             return results;
         }
 
-        /// <summary>
-        /// Gets basic statistics about the queue
-        /// </summary>
+        // TBD, not needed
         public async Task<(long queueLength, long mapSize)> GetQueueStatsAsync()
         {
             var queueLength = await _database.ListLengthAsync("queue:events");

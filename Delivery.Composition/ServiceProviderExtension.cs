@@ -13,11 +13,15 @@ namespace Delivery.Composition
                 .ConfigureManagers();
         }
 
-        public static IServiceCollection AddInfrastructureDependencies(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddInfrastructureDependencies(this IServiceCollection services)
         {
             return services.ConfigureWriteRepositories()
-                .ConfigureReadRepositories()
-                .ConfigureNotifiers(configuration);
+                .ConfigureReadRepositories();
+        }
+
+        public static IServiceCollection AddClientDependencies(this IServiceCollection services, IConfiguration configuration)
+        {
+            return services.ConfigureNotifiers(configuration);
         }
     }
 }

@@ -24,7 +24,8 @@ namespace Struct.Delivery.API
             builder.Services.AddSingleton(structApiClient);
 
             builder.Services.ConfigureApplicationDependencies();
-            builder.Services.ConfigureInfrastructureDependencies(builder.Configuration);
+            builder.Services.ConfigureInfrastructureDependencies();
+            builder.Services.ConfigureClientDependencies();
 
             // Add services to the container.
             builder.Services.AddControllers();
