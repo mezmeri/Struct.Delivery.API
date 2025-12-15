@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Delivery.Application.Interfaces.Repositories;
 using Delivery.Application.Services;
 using Microsoft.Extensions.Hosting;
+using Delivery.Domain.DTO;
 
 namespace Delivery.QueueWorker
 {
@@ -75,7 +76,7 @@ namespace Delivery.QueueWorker
                     switch (entityType)
                     {
                         case EntityType.Product:
-                            List<ProductModel> products = new();
+                            List<ProductWithAttributesDTO> products = new();
                             
                             if (eventType != "products:deleted")
                             {

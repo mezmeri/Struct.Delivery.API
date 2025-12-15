@@ -10,6 +10,6 @@ namespace Delivery.Domain.DTO
     public class ProductWithAttributesDTO
     {
         public ProductModel Product { get; set; }
-        public object AttributeValues { get; set; }
+        public Dictionary<string, object> AttributeValues { get; set; }
     }
 }

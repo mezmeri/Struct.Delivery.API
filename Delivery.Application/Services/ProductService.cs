@@ -2,6 +2,7 @@
 using Delivery.Domain.Events;
 using Delivery.Domain.Enum;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 
 namespace Delivery.Application.Services
 {

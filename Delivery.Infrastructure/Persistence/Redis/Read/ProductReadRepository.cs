@@ -26,12 +26,12 @@ namespace Delivery.Infrastructure.Persistence.Redis.Read
 
         public async Task<List<ProductWithAttributesDTO>> GetPimData(List<int> productIds)
         {
-            var basicModels = await GetBasicModel(productIds);
-            var attributeValues = await GetProductValues<T>(productIds);
+            List<ProductModel> basicModels = await GetBasicModel(productIds);
+            List<ProductAttributeValuesModel<Dictionary<string, object>>> attributeValues = await GetProductValues<Dictionary<string, object>>(productIds);
 
-            var valuesDict = attributeValues.ToDictionary(v => v.ProductId, v => v.Values);
+            Dictionary<int, Dictionary<string, object>> valuesDict = attributeValues.ToDictionary(v => v.ProductId, v => v.Values);
 
-            var result = basicModels.Select(p => new ProductWithAttributesDTO
+            List<ProductWithAttributesDTO> result = basicModels.Select(p => new ProductWithAttributesDTO
             {
                 Product = p,
                 AttributeValues = valuesDict.ContainsKey(p.Id) ? valuesDict[p.Id] : null
