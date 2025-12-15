@@ -18,7 +18,7 @@ namespace Delivery.Client
             _server = redis.GetServer(redis.GetEndPoints().First());
         }
 
-        //TBD, skal fixes med cache-logic.
+        //TBD, skal fixes med nyeste cache-logic.
         public async Task<Dictionary<string, string>> GetCachedItemsAsync(string pattern = "products:*:cached")
         {
             var results = new Dictionary<string, string>();
@@ -53,7 +53,7 @@ namespace Delivery.Client
             return items;
         }
 
-        //Get all entries fra hashmap m. timestampt
+        //Get all entries fra hashmap m. timestamp
         public async Task<Dictionary<string, string>> GetQueueIdMapAsync(string hashKey = "queue:idmap")
         {
             var results = new Dictionary<string, string>();
@@ -67,7 +67,7 @@ namespace Delivery.Client
             return results;
         }
 
-        // TBD, not needed
+        // Bruges til Case 4 - få længde af queue og idmap (hurtig lookup)
         public async Task<(long queueLength, long mapSize)> GetQueueStatsAsync()
         {
             var queueLength = await _database.ListLengthAsync("queue:events");

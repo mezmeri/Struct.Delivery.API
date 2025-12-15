@@ -22,6 +22,7 @@ namespace Delivery.Infrastructure.Notifier
             _webhookUrl = webhookUrl;
         }
 
+        // Sender en POST request til webhook URL'en med ændringsdataene
         public async Task NotifyChangesAsync(IEnumerable<string> ids, string eventType, DateTimeOffset timestamp, string entityType)
         {
             var payload = new

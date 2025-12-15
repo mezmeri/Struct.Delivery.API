@@ -24,9 +24,9 @@ namespace WebhookReceiver
         }
 
 
-        public static IServiceCollection ConfigureClientDependencies(this IServiceCollection services)
+        public static IServiceCollection ConfigureClientDependencies(this IServiceCollection services, IConfiguration configuration)
         {
-            return services.AddInfrastructureDependencies();
+            return services.AddClientDependencies(configuration);
         }
     }
 }

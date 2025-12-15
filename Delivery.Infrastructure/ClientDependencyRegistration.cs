@@ -18,16 +18,20 @@ namespace Delivery.Infrastructure
             // Konfigurerbart webhook URL, ellers fallback til Localhost for udvikling
             var webhookUrl = configuration["Webhook:Url"] ?? "http://localhost:5001/webhook";
 
-            // Register as singleton with factory pattern
+            // Register as singleton with factory pattern - Needed for at create HttpClient
             services.AddSingleton<INotifier>(sp =>
             {
+                // Beder vores DI container om IHttpClientFactory
                 var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+                // Opretter en HttpClient specifikt til WebhookChangeNotifier
                 var httpClient = httpClientFactory.CreateClient(nameof(WebhookChangeNotifier));
                 var logger = sp.GetRequiredService<ILogger<WebhookChangeNotifier>>();
+
+                // Returnerer en ny instans af WebhookChangeNotifier med required params
                 return new WebhookChangeNotifier(httpClient, logger, webhookUrl);
             });
 
-            // Register named HttpClient for the notifier
+            // Registrerer named HttpClient for WebhookChangeNotifier
             services.AddHttpClient(nameof(WebhookChangeNotifier))
                 .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
                 {

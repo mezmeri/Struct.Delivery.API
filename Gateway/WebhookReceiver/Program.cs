@@ -25,7 +25,7 @@ namespace Struct.Delivery.API
 
             builder.Services.ConfigureApplicationDependencies();
             builder.Services.ConfigureInfrastructureDependencies();
-            builder.Services.ConfigureClientDependencies();
+            builder.Services.ConfigureClientDependencies(builder.Configuration);
 
             // Add services to the container.
             builder.Services.AddControllers();
