@@ -4,7 +4,7 @@ namespace Delivery.Application.Interfaces.Managers
 {
     public interface IQueueManager
     {
-        Task EnqueueUpdatesAsync(IEnumerable<QueueItemEventArgs> events);
+        Task EnqueueUpdatesAsync(IEnumerable<QueueItemDTO> events);
 
     }
 }

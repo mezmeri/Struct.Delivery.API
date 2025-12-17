@@ -1,92 +1,106 @@
 ﻿using Delivery.Application.Interfaces.Repositories;
-using StackExchange.Redis;
 using Delivery.Application.Services;
+using Delivery.Domain.Events;
+using Microsoft.Extensions.Logging;
+using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using Delivery.Domain.Events;
-using System.Text.Json.Nodes;
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Threading.Tasks;
 
 namespace Delivery.Infrastructure.Persistence.Redis.Write
 {
     public class QueueWriteRepository : IQueueWriteRepository
     {
         private readonly IDatabase _database;
-
+        private readonly ILogger<QueueWriteRepository> _logger;
         private string _listKey = "queue:events";
-        private string _sortedSetKey = "queue:events:timestamps";
+        private string _hashSetKey = "queue:idmap";
 
-        public QueueWriteRepository(IConnectionMultiplexer redis)
+        public QueueWriteRepository(IConnectionMultiplexer redis, ILogger<QueueWriteRepository> logger)
         {
             _database = redis.GetDatabase();
+            _logger = logger;
         }
 
-        public async Task AddToQueueAsync(IEnumerable<QueueItemEventArgs> events)
+        public async Task AddToQueueAsync(IEnumerable<QueueItemDTO> events)
         {
             long timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
-            SortedSetEntry[] sortedSetEntries = events.Select(x =>
+            List<RedisValue> itemsToPush = new List<RedisValue>();
+
+            foreach (var singularEvent in events)
             {
-                x.Timestamp = timestamp;
-                return new SortedSetEntry(JsonSerializer.Serialize(x), timestamp);
-            }).ToArray();
+                singularEvent.Timestamp = timestamp;
 
-            bool[] addedFlags = await Task.WhenAll(sortedSetEntries.Select(entry => _database.SortedSetAddAsync(_sortedSetKey, entry.Element, entry.Score)));
+                string jsonEvent = JsonSerializer.Serialize(singularEvent);
 
-            List<RedisValue> newIds = new List<RedisValue>();
+                await _database.HashSetAsync(_hashSetKey, singularEvent.Id, jsonEvent);
 
-            for (int i = 0; i < sortedSetEntries.Length; i++)
-            {
-                if (addedFlags[i])
-                    newIds.Add(sortedSetEntries[i].Element);
+                itemsToPush.Add(jsonEvent);
+
+                _logger.LogInformation($"Added/Updated event for ID {singularEvent.Id} at timestamp {timestamp}");
             }
 
-            if (newIds.Count > 0)
+
+            if (itemsToPush.Count > 0)
             {
-                await _database.ListRightPushAsync(_listKey, newIds.ToArray());
+                await _database.ListRightPushAsync(_listKey, itemsToPush.ToArray());
+
+                _logger.LogInformation($"Pushed {itemsToPush.Count()} items to list");
             }
 
         }
 
-        public async Task RemoveFromQueueAsync(IEnumerable<string> ids)
+        public async Task RemoveFromQueueAsync(IEnumerable<QueueItemDTO> processedItems)
         {
+            IEnumerable<IGrouping<string, QueueItemDTO>> grouped = processedItems.GroupBy(p => p.Id);
 
-            if (!ids.Any())
+            foreach (var group in grouped)
             {
-                return;
-            }
+                string id = group.Key;
+                long processedTimestamp = group.Max(x => x.Timestamp);
 
-            RedisValue[] redisValues = ids.Select(id => (RedisValue)id).ToArray();
-            
-            await _database.SortedSetRemoveAsync(_sortedSetKey, redisValues);
+                RedisValue latestJsonItem = await _database.HashGetAsync(_hashSetKey, id);
+
+                QueueItemDTO latestItem = JsonSerializer.Deserialize<QueueItemDTO>(latestJsonItem);
+
+                if (latestItem.Timestamp > processedTimestamp)
+                {
+                    await _database.ListRightPushAsync(_listKey, latestJsonItem);
+                    _logger.LogInformation($"Requeued newer version of ID {id} with timestamp {latestItem.Timestamp}");
+                }
+                else
+                {
+                    await _database.HashDeleteAsync(_hashSetKey, id);
+                    _logger.LogInformation($"Removed processed ID {id} from hash");
+                }
+            }
         }
 
-        public async Task RequeueItemsAsync(IEnumerable<QueueItemEventArgs> items)
+        public async Task RequeueItemsAsync(IEnumerable<QueueItemDTO> items)
         {
-            if (!items.Any())
+            IEnumerable<string> ids = items.Select(i => i.Id).Distinct();
+            List<RedisValue> toPush = new List<RedisValue>();
+
+            foreach (var id in ids)
             {
-                return;
+                var latestJsonItem = await _database.HashGetAsync(_hashSetKey, id);
+
+                if (!latestJsonItem.IsNullOrEmpty)
+                {
+                    toPush.Add(latestJsonItem);
+
+                    _logger.LogInformation($"Requeued latest item for ID {id}");
+                }
             }
 
-            List<RedisValue> serializedItems = new List<RedisValue>();
-
-            foreach (var item in items)
+            if (toPush.Count > 0)
             {
-                double? existingScore = await _database.SortedSetScoreAsync(_sortedSetKey, JsonSerializer.Serialize(item));
-
-                if (!existingScore.HasValue) continue;
-
-                item.Timestamp = (long)existingScore.Value;
-
-                serializedItems.Add(JsonSerializer.Serialize(item));
-            }
-
-            if (serializedItems.Count > 0)
-            {
-                await _database.ListRightPushAsync(_listKey, serializedItems.ToArray());
+                await _database.ListRightPushAsync(_listKey, toPush.ToArray());
             }
         }
 

@@ -1,4 +1,5 @@
 ﻿using Delivery.Application.Interfaces.Repositories;
+using Delivery.Domain.DTO;
 using Struct.App.Api.Models.Product;
 using System;
 using System.Collections.Generic;
@@ -10,8 +11,7 @@ namespace Delivery.Infrastructure.Persistence.CosmoDB.Read
 {
     public class ProductReadRepository : IProductReadRepository
     {
-
-        public Task<List<ProductModel>> GetPimData(List<int> ids)
+        public Task<List<ProductWithAttributesDTO>> GetPimData(List<int> ids)
         {
             throw new NotImplementedException();
         }

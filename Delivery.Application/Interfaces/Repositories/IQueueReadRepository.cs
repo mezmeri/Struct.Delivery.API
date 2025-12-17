@@ -9,7 +9,7 @@ namespace Delivery.Application.Interfaces.Repositories
 {
     public interface IQueueReadRepository
     {
-        Task<IEnumerable<QueueItemEventArgs>> GetQueueUpdates(int batchSize);
+        Task<IEnumerable<QueueItemDTO>> GetQueueUpdates(int batchSize);
         Task<Dictionary<string, long>> GetLatestTimestampsAsync(IEnumerable<string> ids);
 
     }

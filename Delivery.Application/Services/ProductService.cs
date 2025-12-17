@@ -2,6 +2,7 @@
 using Delivery.Domain.Events;
 using Delivery.Domain.Enum;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 
 namespace Delivery.Application.Services
 {
@@ -9,28 +10,24 @@ namespace Delivery.Application.Services
     {
         private readonly IQueueManager _queueManager;
 
-        private event EventHandler<ProductUpdatedEventArgs> _productUpdated;
+        private readonly ILogger<ProductService> _logger;
 
-        public ProductService(IQueueManager queueManager)
+        public ProductService(IQueueManager queueManager, ILogger<ProductService> logger)
         {
             _queueManager = queueManager;
+            _logger = logger;
         }
 
         public async Task HandleWebhookAsync(string eventType, JsonElement payload)
         {
             IEnumerable<string> productIds = ExtractProductIds(payload);
 
-            IEnumerable<ProductUpdatedEventArgs> productChanges = productIds.Select(id => new ProductUpdatedEventArgs
+            IEnumerable<ProductUpdatedDTO> productChanges = productIds.Select(id => new ProductUpdatedDTO
             {
                 Id = id,
                 EventType = eventType,
                 EntityType = EntityType.Product
             });
-
-            foreach (var productChange in productChanges)
-            {
-                _productUpdated?.Invoke(this, productChange);
-            }
 
             await _queueManager.EnqueueUpdatesAsync(productChanges);
 
