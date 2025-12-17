@@ -6,8 +6,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Text.Json;
+using Newtonsoft.Json.Converters;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Delivery.Domain.DTO;
 
 namespace Delivery.Infrastructure.Persistence.Redis.Write
 {
@@ -21,21 +23,21 @@ namespace Delivery.Infrastructure.Persistence.Redis.Write
             _database = redis.GetDatabase();
         }
 
-        public async Task AddToCacheAsync(IEnumerable<ProductModel> products)
+        public async Task AddToCacheAsync(IEnumerable<ProductWithAttributesDTO> products)
         {
             IBatch batch = _database.CreateBatch();
 
-            List<Task<bool>> tasks = products.Select(p => batch.HashSetAsync(_hashKey, p.Id.ToString(), JsonSerializer.Serialize(p))).ToList();
+            List<Task<bool>> tasks = products.Select(p => batch.HashSetAsync(_hashKey, p.Product.Id.ToString(), JsonConvert.SerializeObject(p))).ToList();
 
             batch.Execute();
             await Task.WhenAll(tasks);
         }
 
-        public async Task UpdateToCacheAsync(IEnumerable<ProductModel> products)
+        public async Task UpdateToCacheAsync(IEnumerable<ProductWithAttributesDTO> products)
         {
             IBatch batch = _database.CreateBatch();
 
-            List<Task<bool>> tasks = products.Select(p => batch.HashSetAsync(_hashKey, p.Id.ToString(), JsonSerializer.Serialize(p))).ToList();
+            List<Task<bool>> tasks = products.Select(p => batch.HashSetAsync(_hashKey, p.Product.Id.ToString(), JsonConvert.SerializeObject(p))).ToList();
 
             batch.Execute();
             await Task.WhenAll(tasks);

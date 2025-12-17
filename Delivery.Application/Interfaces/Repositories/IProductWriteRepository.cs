@@ -1,4 +1,5 @@
-﻿using Struct.App.Api.Models.Product;
+﻿using Delivery.Domain.DTO;
+using Struct.App.Api.Models.Product;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,8 +10,8 @@ namespace Delivery.Application.Interfaces.Repositories
 {
     public interface IProductWriteRepository
     {
-        Task AddToCacheAsync(IEnumerable<ProductModel> products);
-        Task UpdateToCacheAsync(IEnumerable<ProductModel> products);
+        Task AddToCacheAsync(IEnumerable<ProductWithAttributesDTO> products);
+        Task UpdateToCacheAsync(IEnumerable<ProductWithAttributesDTO> products);
         Task DeleteFromCacheAsync(IEnumerable<string> ids);
 
     }

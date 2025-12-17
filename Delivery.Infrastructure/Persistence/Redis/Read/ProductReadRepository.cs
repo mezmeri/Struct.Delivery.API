@@ -1,5 +1,7 @@
 ﻿using Delivery.Application.Interfaces.Repositories;
 using Delivery.Application.Services;
+using Delivery.Domain.DTO;
+using NPOI.SS.Formula.Functions;
 using StackExchange.Redis;
 using Struct.App.Api.Client;
 using Struct.App.Api.Models;
@@ -22,9 +24,36 @@ namespace Delivery.Infrastructure.Persistence.Redis.Read
             _apiClient = apiClient;
         }
 
-        public async Task<List<ProductModel>> GetPimData(List<int> productIds)
+        public async Task<List<ProductWithAttributesDTO>> GetPimData(List<int> productIds)
+        {
+            List<ProductModel> basicModels = await GetBasicModel(productIds);
+            List<ProductAttributeValuesModel<Dictionary<string, object>>> attributeValues = await GetProductValues<Dictionary<string, object>>(productIds);
+
+            Dictionary<int, Dictionary<string, object>> valuesDict = attributeValues.ToDictionary(v => v.ProductId, v => v.Values);
+
+            List<ProductWithAttributesDTO> result = basicModels.Select(p => new ProductWithAttributesDTO
+            {
+                Product = p,
+                AttributeValues = valuesDict.ContainsKey(p.Id) ? valuesDict[p.Id] : null
+            }).ToList();
+
+            return result;  
+        }
+
+
+        private async Task<List<ProductModel>> GetBasicModel(List<int> productIds)
         {
             return await _apiClient.Products.GetProductsAsync(productIds);
+        }
+
+        private async Task<List<ProductAttributeValuesModel<T>>> GetProductValues<T>(List<int> productIds)
+        {
+            ProductValuesRequestModel productValuesRequestModel = new()
+            {
+                ProductIds = productIds
+            };
+
+            return await _apiClient.Products.GetProductAttributeValuesAsync<T>(productValuesRequestModel);
         }
     }
 }

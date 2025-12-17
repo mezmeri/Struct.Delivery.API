@@ -2,6 +2,7 @@
 using Delivery.Domain.Events;
 using Delivery.Domain.Enum;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 
 namespace Delivery.Application.Services
 {
@@ -9,9 +10,12 @@ namespace Delivery.Application.Services
     {
         private readonly IQueueManager _queueManager;
 
-        public ProductService(IQueueManager queueManager)
+        private readonly ILogger<ProductService> _logger;
+
+        public ProductService(IQueueManager queueManager, ILogger<ProductService> logger)
         {
             _queueManager = queueManager;
+            _logger = logger;
         }
 
         public async Task HandleWebhookAsync(string eventType, JsonElement payload)
