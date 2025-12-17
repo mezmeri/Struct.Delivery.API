@@ -1,4 +1,5 @@
 ﻿using Delivery.Application.Interfaces.Repositories;
+using Delivery.Domain.DTO;
 using Struct.App.Api.Models.Variant;
 using System;
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ namespace Delivery.Infrastructure.Persistence.CosmoDB.Read
 {
     public class VariantReadRepository : IVariantReadRepository
     {
-        public Task<List<VariantModel>> GetPimData(List<int> ids)
+        public Task<List<VariantWithAttributesDTO>> GetPimData(List<int> ids)
         {
             throw new NotImplementedException();
         }

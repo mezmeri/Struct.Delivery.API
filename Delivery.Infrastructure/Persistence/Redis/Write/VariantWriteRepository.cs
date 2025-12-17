@@ -1,4 +1,6 @@
 ﻿using Delivery.Application.Interfaces.Repositories;
+using Delivery.Domain.DTO;
+using Newtonsoft.Json;
 using StackExchange.Redis;
 using Struct.App.Api.Models.Variant;
 using System;
@@ -13,22 +15,38 @@ namespace Delivery.Infrastructure.Persistence.Redis.Write
     public class VariantWriteRepository : IVariantWriteRepository
     {
         private readonly IDatabase _database;
+        private const string _hashKey = "variants:cached";
 
         public VariantWriteRepository(IConnectionMultiplexer redis)
         {
             _database = redis.GetDatabase();
         }
 
-        public async Task CacheUpdates(IEnumerable<VariantModel> variants)
+        public async Task AddToCacheAsync(IEnumerable<VariantWithAttributesDTO> variants)
+        {
+            IBatch batch = _database.CreateBatch();
+
+            List<Task<bool>> tasks = variants.Select(v => batch.HashSetAsync(_hashKey, v.Variant.Id.ToString(), JsonConvert.SerializeObject(v))).ToList();
+
+            batch.Execute();
+            await Task.WhenAll(tasks);
+        }
+
+        public async Task UpdateToCacheAsync(IEnumerable<VariantWithAttributesDTO> variants)
+        {
+            IBatch batch = _database.CreateBatch();
+            List<Task<bool>> tasks = variants.Select(v => batch.HashSetAsync(_hashKey, v.Variant.Id.ToString(), JsonConvert.SerializeObject(v))).ToList();
+            batch.Execute();
+            await Task.WhenAll(tasks);
+        }
+
+        public async Task DeleteFromCacheAsync(IEnumerable<string> ids)
         {
             IBatch batch = _database.CreateBatch();
             List<Task> tasks = new List<Task>();
-
-            foreach (var variant in variants)
+            foreach (var id in ids)
             {
-                string key = $"variants:{variant.Id}:cached";
-                string value = System.Text.Json.JsonSerializer.Serialize(variant);
-                tasks.Add(batch.StringSetAsync(key, value, TimeSpan.FromHours(1)));
+                tasks.Add(batch.HashDeleteAsync(_hashKey, id));
             }
             batch.Execute();
             await Task.WhenAll(tasks);

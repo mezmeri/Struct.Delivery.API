@@ -18,7 +18,7 @@ namespace Delivery.Application.Services
         {
             IEnumerable<string> variantIds = ExtractVariantIds(payload);
 
-            IEnumerable<VariantUpdated> variantChanges = variantIds.Select(id => new VariantUpdated
+            IEnumerable<VariantUpdatedDTO> variantChanges = variantIds.Select(id => new VariantUpdatedDTO
             {
                 Id = id,
                 EventType = eventType,

@@ -27,7 +27,7 @@ namespace Delivery.Application.Services
 
         }
 
-        public async Task<List<VariantModel>> GetVariantDataAsync(IEnumerable<string> ids)
+        public async Task<List<VariantWithAttributesDTO>> GetVariantDataAsync(IEnumerable<string> ids)
         {
             List<int> variantIds = ids.Select(int.Parse).ToList();
             return await _variantReadRepository.GetPimData(variantIds);

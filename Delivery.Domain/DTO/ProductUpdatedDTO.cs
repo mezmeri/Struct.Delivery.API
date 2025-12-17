@@ -8,5 +8,6 @@ namespace Delivery.Domain.Events
 {
     public class ProductUpdatedDTO : QueueItemDTO
     {
+
     }
 }
