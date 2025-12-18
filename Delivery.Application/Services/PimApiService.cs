@@ -1,10 +1,11 @@
-﻿using System;
+﻿using Delivery.Application.Interfaces.Repositories;
+using Delivery.Domain.DTO;
+using Struct.App.Api.Models.Product;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Delivery.Application.Interfaces.Repositories;
-using Struct.App.Api.Models.Product;
 
 namespace Delivery.Application.Services
 {
@@ -16,7 +17,7 @@ namespace Delivery.Application.Services
         {
             _productReadRepository = productReadRepository;
         }
-        public async Task<List<ProductModel>> GetProductDataAsync(IEnumerable<string> ids)
+        public async Task<List<ProductWithAttributesDTO>> GetProductDataAsync(IEnumerable<string> ids)
         {
             List<int> productIds = ids.Select(int.Parse).ToList();
 

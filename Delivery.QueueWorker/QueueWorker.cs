@@ -1,18 +1,27 @@
+<<<<<<< HEAD
 ﻿using Delivery.Application.Interfaces.Notifier;
+=======
+>>>>>>> master
 using Delivery.Application.Interfaces.Repositories;
 using Delivery.Application.Services;
 using Delivery.Domain.Enum;
 using Delivery.Domain.Events;
 using Microsoft.Extensions.Logging;
+using Struct.App.Api.Models.Product;
+using Struct.App.Api.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Delivery.Application.Interfaces.Repositories;
+using Delivery.Application.Services;
+using Microsoft.Extensions.Hosting;
+using Delivery.Domain.DTO;
 
 namespace Delivery.QueueWorker
 {
-    public class QueueWorker
+    public class QueueWorker : BackgroundService
     {
         private readonly IQueueReadRepository _queueReadRepository;
         private readonly IQueueWriteRepository _queueWriteRepository;
@@ -38,12 +47,12 @@ namespace Delivery.QueueWorker
         {
             IEnumerable<QueueItemDTO> queuedChanges = await _queueReadRepository.GetQueueUpdates(100);
 
-            _logger.LogInformation($"Processing queue batch of {queuedChanges.Count()} items");
-
             if (!queuedChanges.Any())
             {
                 return;
             }
+
+            _logger.LogInformation($"Processing queue batch of {queuedChanges.Count()} items");
 
             IEnumerable<string> cleanIds = await _filterDirtyIdsService.FilterDirtyIds(queuedChanges);
 
@@ -60,35 +69,81 @@ namespace Delivery.QueueWorker
 
             if (cleanIds.Any())
             {
+<<<<<<< HEAD
                 var groupedEvents = cleanItems.GroupBy(x => new { x.EventType, x.EntityType });
+=======
+                var groupedEvents = cleanItems.GroupBy(x => new { x.EntityType, x.EventType });
+>>>>>>> master
 
                 foreach (var group in groupedEvents)
                 {
                     string eventType = group.Key.EventType;
+<<<<<<< HEAD
                     List<QueueItemDTO> itemsInGroup = group.ToList();
+=======
+                    EntityType entityType = group.Key.EntityType;
+>>>>>>> master
                     List<string> ids = group.Select(x => x.Id).ToList();
                     EntityType entityType = group.Key.EntityType;
 
 
                     _logger.LogInformation($"Processing event type {eventType} with {ids.Count()} items");
 
-                    switch (eventType)
+                    switch (entityType)
                     {
-                        case "products:updated":
-                            var products = await _pimApiService.GetProductDataAsync(ids);
-                            await _productWriteRepository.CacheUpdates(products);
+                        case EntityType.Product:
+                            List<ProductWithAttributesDTO> products = new();
+                            
+                            if (eventType != "products:deleted")
+                            {
+                                products = (await _pimApiService.GetProductDataAsync(ids)).ToList();
+                            }
+
+                            if (eventType == "products:created")
+                                await _productWriteRepository.AddToCacheAsync(products);
+                            else if (eventType == "products:updated")
+                                await _productWriteRepository.UpdateToCacheAsync(products);
+                            else if (eventType == "products:deleted")
+                                await _productWriteRepository.DeleteFromCacheAsync(ids);
                             break;
                         default:
                             _logger.LogInformation($"No repository for event type {eventType}");
                             break;
                     }
 
+<<<<<<< HEAD
                     await _queueWriteRepository.RemoveFromQueueAsync(itemsInGroup);
 
                     await _notifier.NotifyChangesAsync(ids, eventType, DateTimeOffset.UtcNow, entityType.ToString());
+=======
+                    await _queueWriteRepository.RemoveFromQueueAsync(group);
+>>>>>>> master
                 }
+            }
+            //    await _queueReadRepository.RemoveFromQueueAsync(cleanIds);
+            //}
+        }
+
+        /// <summary>
+        /// Inherited from the BackgroundService class, which are a part of the whole Host environment setup in Program.cs. We might have to use this?
+        /// </summary>
+        /// <param name="stoppingToken"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                try
+                { 
+                    await ProcessQueueAsync(); 
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error processing queue");
+                }
+                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
             }
         }
     }
 }
-

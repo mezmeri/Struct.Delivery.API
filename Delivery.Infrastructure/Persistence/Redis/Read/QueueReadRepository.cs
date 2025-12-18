@@ -27,7 +27,7 @@ namespace Delivery.Infrastructure.Persistence.Redis.Read
             _logger = logger;
         }
 
-        public async Task<IEnumerable<QueueItemDTO>> GetQueueUpdates(int batchSize = 100)
+        public async Task <IEnumerable<QueueItemDTO>> GetQueueUpdates(int batchSize = 100)
         {
             List<QueueItemDTO> events = new List<QueueItemDTO>();
 
