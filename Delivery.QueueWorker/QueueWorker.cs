@@ -22,15 +22,17 @@ namespace Delivery.QueueWorker
         private readonly IQueueReadRepository _queueReadRepository;
         private readonly IQueueWriteRepository _queueWriteRepository;
         private readonly IProductWriteRepository _productWriteRepository;
+        private readonly IVariantGroupWriteRepository _variantGroupWriteRepository;
         private readonly FilterDirtyIdsService _filterDirtyIdsService;
         private readonly PimApiService _pimApiService;
         private readonly ILogger<QueueWorker> _logger;
 
-        public QueueWorker(IQueueReadRepository queueReadRepository, IProductWriteRepository productWriteRepository, FilterDirtyIdsService filterDirtyIdsService, PimApiService pimApiService, IQueueWriteRepository queueWriteRepository, ILogger<QueueWorker> logger)
+        public QueueWorker(IQueueReadRepository queueReadRepository, IProductWriteRepository productWriteRepository, FilterDirtyIdsService filterDirtyIdsService, PimApiService pimApiService, IQueueWriteRepository queueWriteRepository, IVariantGroupWriteRepository variantGroupWriteRepository, ILogger<QueueWorker> logger)
         {
             _queueReadRepository = queueReadRepository;
             _queueWriteRepository = queueWriteRepository;
             _productWriteRepository = productWriteRepository;
+            _variantGroupWriteRepository = variantGroupWriteRepository;
             _filterDirtyIdsService = filterDirtyIdsService;
             _pimApiService = pimApiService;
             _logger = logger;
@@ -89,6 +91,21 @@ namespace Delivery.QueueWorker
                                 await _productWriteRepository.UpdateToCacheAsync(products);
                             else if (eventType == "products:deleted")
                                 await _productWriteRepository.DeleteFromCacheAsync(ids);
+                            break;
+                        case EntityType.VariantGroup:
+                            List<VariantGroupWithAttributesDTO> variantGroups = new();
+
+                            if (eventType != "variantgroups:deleted")
+                            {
+                                variantGroups = (await _pimApiService.GetVariantGroupDataAsync(ids)).ToList();
+                            }
+
+                            if (eventType == "variantgroups:created")
+                                await _variantGroupWriteRepository.AddToCacheAsync(variantGroups);
+                            else if (eventType == "variantgroups:updated")
+                                await _variantGroupWriteRepository.UpdateToCacheAsync(variantGroups);
+                            else if (eventType == "variantgroups:deleted")
+                                await _variantGroupWriteRepository.DeleteFromCacheAsync(ids);
                             break;
                         default:
                             _logger.LogInformation($"No repository for event type {eventType}");
