@@ -12,6 +12,7 @@ namespace Delivery.Infrastructure
         public static IServiceCollection ConfigureWriteRepositories(this IServiceCollection services)
         {
             services.AddSingleton<IProductWriteRepository, ProductWriteRepository>();
+            services.AddSingleton<IProductStructureWriteRepository, ProductStructureWriteRepository>();
             services.AddSingleton<IVariantWriteRepository, VariantWriteRepository>();
             services.AddSingleton<IVariantGroupWriteRepository, VariantGroupWriteRepository>();
             services.AddSingleton<ICatalogueWriteRepository, CatalogueWriteRepository>();
@@ -26,6 +27,7 @@ namespace Delivery.Infrastructure
         public static IServiceCollection ConfigureReadRepositories(this IServiceCollection services)
         {
             services.AddSingleton<IProductReadRepository, ProductReadRepository>();
+            services.AddSingleton<IProductStructureReadRepository, ProductStructureReadRepository>();
             services.AddSingleton<IQueueReadRepository, QueueReadRepository>();
 
             return services;

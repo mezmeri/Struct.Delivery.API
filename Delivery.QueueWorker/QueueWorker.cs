@@ -22,15 +22,17 @@ namespace Delivery.QueueWorker
         private readonly IQueueReadRepository _queueReadRepository;
         private readonly IQueueWriteRepository _queueWriteRepository;
         private readonly IProductWriteRepository _productWriteRepository;
+        private readonly IProductStructureWriteRepository _productStructureWriteRepository;
         private readonly FilterDirtyIdsService _filterDirtyIdsService;
         private readonly PimApiService _pimApiService;
         private readonly ILogger<QueueWorker> _logger;
 
-        public QueueWorker(IQueueReadRepository queueReadRepository, IProductWriteRepository productWriteRepository, FilterDirtyIdsService filterDirtyIdsService, PimApiService pimApiService, IQueueWriteRepository queueWriteRepository, ILogger<QueueWorker> logger)
+        public QueueWorker(IQueueReadRepository queueReadRepository, IProductWriteRepository productWriteRepository, FilterDirtyIdsService filterDirtyIdsService, PimApiService pimApiService, IQueueWriteRepository queueWriteRepository, IProductStructureWriteRepository productStructureWriteRepository, ILogger<QueueWorker> logger)
         {
             _queueReadRepository = queueReadRepository;
             _queueWriteRepository = queueWriteRepository;
             _productWriteRepository = productWriteRepository;
+            _productStructureWriteRepository = productStructureWriteRepository;
             _filterDirtyIdsService = filterDirtyIdsService;
             _pimApiService = pimApiService;
             _logger = logger;
@@ -89,6 +91,21 @@ namespace Delivery.QueueWorker
                                 await _productWriteRepository.UpdateToCacheAsync(products);
                             else if (eventType == "products:deleted")
                                 await _productWriteRepository.DeleteFromCacheAsync(ids);
+                            break;
+                        case EntityType.ProductStructure:
+                            List<ProductStructureWithAttributesDTO> productStructures = new();
+
+                            if (eventType != "productstructures:deleted")
+                            {
+                                productStructures = (await _pimApiService.GetProductStructureDataAsync(ids)).ToList();
+                            }
+
+                            if (eventType == "productstructures:created")
+                                await _productStructureWriteRepository.AddToCacheAsync(productStructures);
+                            else if (eventType == "productstructures:updated")
+                                await _productStructureWriteRepository.UpdateToCacheAsync(productStructures);
+                            else if (eventType == "productstructures:deleted")
+                                await _productStructureWriteRepository.DeleteFromCacheAsync(ids);
                             break;
                         default:
                             _logger.LogInformation($"No repository for event type {eventType}");

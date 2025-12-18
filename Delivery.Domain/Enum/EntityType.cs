@@ -8,6 +8,7 @@ namespace Delivery.Domain.Enum
 {
     public enum EntityType
     {
+        ProductStructure,
         Product,
         Variant,
         VariantGroup,
