@@ -18,19 +18,15 @@ namespace Delivery.Client
             _server = redis.GetServer(redis.GetEndPoints().First());
         }
 
-        //TBD, skal fixes med nyeste cache-logic.
-        public async Task<Dictionary<string, string>> GetCachedItemsAsync(string pattern = "products:*:cached")
+        //Fixed, bruger nu hashKey til at læse fra Redis
+        public async Task<Dictionary<string, string>> GetCachedItemsAsync(string hashKey = "products:cached")
         {
             var results = new Dictionary<string, string>();
-            var keys = _server.Keys(pattern: pattern);
+            var entries = await _database.HashGetAllAsync(hashKey);
 
-            foreach (var key in keys)
+            foreach (var entry in entries)
             {
-                var value = await _database.StringGetAsync(key);
-                if (!value.IsNullOrEmpty)
-                {
-                    results[key.ToString()] = value.ToString();
-                }
+                results[entry.Name.ToString()] = entry.Value.ToString();
             }
 
             return results;

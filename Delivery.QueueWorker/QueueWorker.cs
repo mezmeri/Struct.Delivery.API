@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-﻿using Delivery.Application.Interfaces.Notifier;
-=======
->>>>>>> master
+using Delivery.Application.Interfaces.Notifier;
 using Delivery.Application.Interfaces.Repositories;
 using Delivery.Application.Services;
 using Delivery.Domain.Enum;
@@ -69,22 +66,13 @@ namespace Delivery.QueueWorker
 
             if (cleanIds.Any())
             {
-<<<<<<< HEAD
-                var groupedEvents = cleanItems.GroupBy(x => new { x.EventType, x.EntityType });
-=======
                 var groupedEvents = cleanItems.GroupBy(x => new { x.EntityType, x.EventType });
->>>>>>> master
 
                 foreach (var group in groupedEvents)
                 {
                     string eventType = group.Key.EventType;
-<<<<<<< HEAD
-                    List<QueueItemDTO> itemsInGroup = group.ToList();
-=======
                     EntityType entityType = group.Key.EntityType;
->>>>>>> master
                     List<string> ids = group.Select(x => x.Id).ToList();
-                    EntityType entityType = group.Key.EntityType;
 
 
                     _logger.LogInformation($"Processing event type {eventType} with {ids.Count()} items");
@@ -111,17 +99,16 @@ namespace Delivery.QueueWorker
                             break;
                     }
 
-<<<<<<< HEAD
-                    await _queueWriteRepository.RemoveFromQueueAsync(itemsInGroup);
-
-                    await _notifier.NotifyChangesAsync(ids, eventType, DateTimeOffset.UtcNow, entityType.ToString());
-=======
                     await _queueWriteRepository.RemoveFromQueueAsync(group);
->>>>>>> master
+
+                    await _notifier.NotifyChangesAsync(
+                        ids,
+                        eventType,
+                        DateTimeOffset.UtcNow,
+                        entityType.ToString());
                 }
             }
-            //    await _queueReadRepository.RemoveFromQueueAsync(cleanIds);
-            //}
+
         }
 
         /// <summary>
@@ -142,7 +129,7 @@ namespace Delivery.QueueWorker
                 {
                     _logger.LogError(ex, "Error processing queue");
                 }
-                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+                await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
             }
         }
     }

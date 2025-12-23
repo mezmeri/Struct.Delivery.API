@@ -1,6 +1,7 @@
 ﻿using Delivery.Application.Interfaces.Repositories;
 using Delivery.Application.Services;
 using Delivery.Domain.DTO;
+using Newtonsoft.Json;
 using NPOI.SS.Formula.Functions;
 using StackExchange.Redis;
 using Struct.App.Api.Client;
@@ -18,10 +19,13 @@ namespace Delivery.Infrastructure.Persistence.Redis.Read
     public class ProductReadRepository : IProductReadRepository
     {
         private readonly StructApiClient _apiClient;
+        private readonly IDatabase _database;
+        private const string _cacheHashKey = "products:cached";
 
-        public ProductReadRepository(StructApiClient apiClient)
+        public ProductReadRepository(StructApiClient apiClient, IConnectionMultiplexer redis)
         {
             _apiClient = apiClient;
+            _database = redis.GetDatabase();
         }
 
         public async Task<List<ProductWithAttributesDTO>> GetPimData(List<int> productIds)
@@ -38,6 +42,28 @@ namespace Delivery.Infrastructure.Persistence.Redis.Read
             }).ToList();
 
             return result;  
+        }
+
+        //Retrieve single product fra cachen
+        public async Task<ProductWithAttributesDTO?> GetCachedProductAsync(string productId)
+        {
+            RedisValue value = await _database.HashGetAsync(_cacheHashKey, productId);
+
+            if (value.IsNullOrEmpty)
+                return null;
+
+            return JsonConvert.DeserializeObject<ProductWithAttributesDTO>(value);
+        }
+
+        //Retrieve all products fra cachen - Returnere STORT dataset!
+        public async Task<List<ProductWithAttributesDTO>> GetAllCachedProductsAsync()
+        {
+            HashEntry[] entries = await _database.HashGetAllAsync(_cacheHashKey);
+
+            return entries
+                .Select(e => JsonConvert.DeserializeObject<ProductWithAttributesDTO>(e.Value))
+                .Where(p => p != null)
+                .ToList();
         }
 
 

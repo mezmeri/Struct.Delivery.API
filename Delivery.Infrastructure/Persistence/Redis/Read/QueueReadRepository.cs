@@ -74,5 +74,16 @@ namespace Delivery.Infrastructure.Persistence.Redis.Read
             return results;
         }
 
+        //Peek without popping - Brugt til monitorering inden caching
+        public async Task<List<QueueItemDTO>> PeekQueueItemsAsync(int count = 100)
+        {
+            RedisValue[] items = await _database.ListRangeAsync(_listKey, 0, count - 1);
+
+            return items
+                .Where(item => item.HasValue)
+                .Select(item => JsonSerializer.Deserialize<QueueItemDTO>(item))
+                .Where(item => item != null)
+                .ToList();
+        }
     }
 }

@@ -1,5 +1,7 @@
-﻿using Delivery.Application.Interfaces.Repositories;
+﻿using Delivery.Application.Interfaces.Notifier;
+using Delivery.Application.Interfaces.Repositories;
 using Delivery.Composition;
+using Delivery.Infrastructure.Notifier;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -32,6 +34,7 @@ namespace Delivery.QueueWorker
                         return ConnectionMultiplexer.Connect(connectionstring);
                     });
 
+                    services.AddHttpClient<INotifier, WebhookChangeNotifier>();
                     services.AddSingleton(structApiClient);
                     services.AddApplicationDependencies();
                     services.AddInfrastructureDependencies();
