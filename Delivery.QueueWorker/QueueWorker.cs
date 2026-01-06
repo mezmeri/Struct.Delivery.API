@@ -29,7 +29,7 @@ namespace Delivery.QueueWorker
         private readonly ILogger<QueueWorker> _logger;
         private readonly INotifier _notifier;
 
-        public QueueWorker(IQueueReadRepository queueReadRepository, IProductWriteRepository productWriteRepository, IVariantWriteRepository variantWriteRepository, FilterDirtyIdsService filterDirtyIdsService, PimApiService pimApiService, IQueueWriteRepository queueWriteRepository, ILogger<QueueWorker> logger)
+        public QueueWorker(IQueueReadRepository queueReadRepository, IProductWriteRepository productWriteRepository, IVariantWriteRepository variantWriteRepository, FilterDirtyIdsService filterDirtyIdsService, PimApiService pimApiService, IQueueWriteRepository queueWriteRepository, ILogger<QueueWorker> logger, INotifier notifier)
         {
             _queueReadRepository = queueReadRepository;
             _queueWriteRepository = queueWriteRepository;
