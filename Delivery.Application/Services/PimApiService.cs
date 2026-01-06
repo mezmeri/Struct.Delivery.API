@@ -12,10 +12,12 @@ namespace Delivery.Application.Services
     public class PimApiService
     {
         private readonly IProductReadRepository _productReadRepository;
+        private readonly IVariantReadRepository _variantReadRepository;
 
-        public PimApiService(IProductReadRepository productReadRepository)
+        public PimApiService(IProductReadRepository productReadRepository, IVariantReadRepository variantReadRepository)
         {
             _productReadRepository = productReadRepository;
+            _variantReadRepository = variantReadRepository;
         }
         public async Task<List<ProductWithAttributesDTO>> GetProductDataAsync(IEnumerable<string> ids)
         {
@@ -23,6 +25,12 @@ namespace Delivery.Application.Services
 
             return await _productReadRepository.GetPimData(productIds);
 
+        }
+
+        public async Task<List<VariantWithAttributesDTO>> GetVariantDataAsync(IEnumerable<string> ids)
+        {
+            List<int> variantIds = ids.Select(int.Parse).ToList();
+            return await _variantReadRepository.GetPimData(variantIds);
         }
     }
 }

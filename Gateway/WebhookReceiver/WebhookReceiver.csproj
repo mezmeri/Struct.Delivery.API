@@ -12,6 +12,8 @@
     <PackageReference Include="StackExchange.Redis" Version="2.9.32" />
     <PackageReference Include="Struct.App.Api.Client" Version="4.0.9" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <PackageReference Include="T4MVC" Version="4.2.5" />
+    <PackageReference Include="T4MVCExtensions" Version="4.2.5" />
   </ItemGroup>
 
   <ItemGroup>

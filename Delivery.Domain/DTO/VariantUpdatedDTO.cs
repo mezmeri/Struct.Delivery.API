@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Delivery.Domain.Events
 {
-    public class ProductUpdatedDTO : QueueItemDTO
+    public class VariantUpdatedDTO : QueueItemDTO
     {
 
     }

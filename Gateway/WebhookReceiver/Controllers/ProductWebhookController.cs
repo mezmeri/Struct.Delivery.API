@@ -11,15 +11,19 @@ namespace WebhookReceiver.Controllers
     {
         private readonly ProductService _productService;
 
-        public ProductWebhookController(ProductService productService)
+        private readonly ILogger<ProductWebhookController> _logger;
+
+        public ProductWebhookController(ProductService productService, ILogger<ProductWebhookController> logger)
         {
             _productService = productService;
+            _logger = logger;
         }
 
         [HttpPost("productUpdate")]
         public async Task<IActionResult> ProductUpdate([FromHeader(Name = "x-event-key")] string eventType, [FromBody] JsonElement payload)
         {
             await _productService.HandleWebhookAsync(eventType, payload);
+            _logger.LogInformation("Received product update webhook: {Payload}", payload.ToString());
 
             return Accepted();
         }
