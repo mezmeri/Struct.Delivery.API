@@ -1,3 +1,4 @@
+using Delivery.Application.Interfaces.Notifier;
 using Delivery.Application.Interfaces.Repositories;
 using Delivery.Application.Services;
 using Delivery.Domain.Enum;
@@ -25,8 +26,9 @@ namespace Delivery.QueueWorker
         private readonly FilterDirtyIdsService _filterDirtyIdsService;
         private readonly PimApiService _pimApiService;
         private readonly ILogger<QueueWorker> _logger;
+        private readonly INotifier _notifier;
 
-        public QueueWorker(IQueueReadRepository queueReadRepository, IProductWriteRepository productWriteRepository, FilterDirtyIdsService filterDirtyIdsService, PimApiService pimApiService, IQueueWriteRepository queueWriteRepository, ILogger<QueueWorker> logger)
+        public QueueWorker(IQueueReadRepository queueReadRepository, IProductWriteRepository productWriteRepository, FilterDirtyIdsService filterDirtyIdsService, PimApiService pimApiService, IQueueWriteRepository queueWriteRepository, ILogger<QueueWorker> logger, INotifier notifier)
         {
             _queueReadRepository = queueReadRepository;
             _queueWriteRepository = queueWriteRepository;
@@ -34,6 +36,7 @@ namespace Delivery.QueueWorker
             _filterDirtyIdsService = filterDirtyIdsService;
             _pimApiService = pimApiService;
             _logger = logger;
+            _notifier = notifier;
 
         }
 
@@ -71,6 +74,7 @@ namespace Delivery.QueueWorker
                     EntityType entityType = group.Key.EntityType;
                     List<string> ids = group.Select(x => x.Id).ToList();
 
+
                     _logger.LogInformation($"Processing event type {eventType} with {ids.Count()} items");
 
                     switch (entityType)
@@ -96,10 +100,15 @@ namespace Delivery.QueueWorker
                     }
 
                     await _queueWriteRepository.RemoveFromQueueAsync(group);
+
+                    await _notifier.NotifyChangesAsync(
+                        ids,
+                        eventType,
+                        DateTimeOffset.UtcNow,
+                        entityType.ToString());
                 }
             }
-            //    await _queueReadRepository.RemoveFromQueueAsync(cleanIds);
-            //}
+
         }
 
         /// <summary>
@@ -120,7 +129,7 @@ namespace Delivery.QueueWorker
                 {
                     _logger.LogError(ex, "Error processing queue");
                 }
-                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+                await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
             }
         }
     }

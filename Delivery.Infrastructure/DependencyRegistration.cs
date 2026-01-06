@@ -1,10 +1,13 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Delivery.Infrastructure.Persistence.Redis.Write;
+﻿using Delivery.Application.Interfaces.Managers;
+using Delivery.Application.Interfaces.Notifier;
 using Delivery.Application.Interfaces.Repositories;
-using Delivery.Application.Interfaces.Managers;
 using Delivery.Infrastructure.Managers;
+using Delivery.Infrastructure.Notifier;
 using Delivery.Infrastructure.Persistence.Redis.Read;
-
+using Delivery.Infrastructure.Persistence.Redis.Write;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 namespace Delivery.Infrastructure
 {
     public static class DependencyRegistration

@@ -65,6 +65,12 @@ namespace Delivery.Infrastructure.Persistence.Redis.Write
                 long processedTimestamp = group.Max(x => x.Timestamp);
 
                 RedisValue latestJsonItem = await _database.HashGetAsync(_hashSetKey, id);
+                if (latestJsonItem.IsNullOrEmpty)
+                {
+                    _logger.LogWarning($"ID {id} ikke fundet i hashSet - already processed or removed");
+                    continue;
+                }
+
 
                 QueueItemDTO latestItem = JsonSerializer.Deserialize<QueueItemDTO>(latestJsonItem);
 

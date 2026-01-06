@@ -11,5 +11,7 @@ namespace Delivery.Application.Interfaces.Repositories
     public interface IProductReadRepository
     {
         Task<List<ProductWithAttributesDTO>> GetPimData(List<int> ids);
+        Task <ProductWithAttributesDTO?> GetCachedProductAsync(string productId);
+        Task<List<ProductWithAttributesDTO>> GetAllCachedProductsAsync();
     }
 }

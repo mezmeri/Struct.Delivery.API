@@ -9,11 +9,11 @@ using System.Threading.Tasks;
 
 namespace Delivery.Infrastructure.Persistence.CosmoDB.Read
 {
-    public class ProductReadRepository : IProductReadRepository
-    {
-        public Task<List<ProductWithAttributesDTO>> GetPimData(List<int> ids)
-        {
-            throw new NotImplementedException();
-        }
-    }
+    //public class ProductReadRepository : IProductReadRepository
+    //{
+    //    public Task<List<ProductWithAttributesDTO>> GetPimData(List<int> ids)
+    //    {
+    //        throw new NotImplementedException();
+    //    }
+    //}
 }
