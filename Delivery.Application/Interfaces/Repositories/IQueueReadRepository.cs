@@ -11,6 +11,6 @@ namespace Delivery.Application.Interfaces.Repositories
     {
         Task<IEnumerable<QueueItemDTO>> GetQueueUpdates(int batchSize);
         Task<Dictionary<string, long>> GetLatestTimestampsAsync(IEnumerable<string> ids);
-
+        Task<List<QueueItemDTO>> PeekQueueItemsAsync(int count = 100);
     }
 }
