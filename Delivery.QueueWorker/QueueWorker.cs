@@ -23,22 +23,16 @@ namespace Delivery.QueueWorker
     {
         private readonly IQueueReadRepository _queueReadRepository;
         private readonly IQueueWriteRepository _queueWriteRepository;
-        private readonly IProductWriteRepository _productWriteRepository;
-        private readonly IVariantWriteRepository _variantWriteRepository;
         private readonly FilterDirtyIdsService _filterDirtyIdsService;
-        private readonly PimApiService _pimApiService;
         private readonly ILogger<QueueWorker> _logger;
         private readonly INotifier _notifier;
         private readonly IReadOnlyDictionary<EntityType, IEntityEventService> _entityEvents;
 
-        public QueueWorker(IQueueReadRepository queueReadRepository, IProductWriteRepository productWriteRepository, IVariantWriteRepository variantWriteRepository, FilterDirtyIdsService filterDirtyIdsService, PimApiService pimApiService, IQueueWriteRepository queueWriteRepository, ILogger<QueueWorker> logger, INotifier notifier, IEnumerable<IEntityEventService> entityEvents)
+        public QueueWorker(IQueueReadRepository queueReadRepository, FilterDirtyIdsService filterDirtyIdsService, IQueueWriteRepository queueWriteRepository, ILogger<QueueWorker> logger, INotifier notifier, IEnumerable<IEntityEventService> entityEvents)
         {
             _queueReadRepository = queueReadRepository;
             _queueWriteRepository = queueWriteRepository;
-            _productWriteRepository = productWriteRepository;
-            _variantWriteRepository = variantWriteRepository;
             _filterDirtyIdsService = filterDirtyIdsService;
-            _pimApiService = pimApiService;
             _logger = logger;
             _notifier = notifier;
             _entityEvents = entityEvents.ToDictionary(s => s.EntityType);
