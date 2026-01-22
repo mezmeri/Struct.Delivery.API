@@ -19,7 +19,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Delivery.Domain", "Delivery
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Delivery.Client", "Delivery.Client\Delivery.Client.csproj", "{65BC680B-1849-40DA-AA3B-BC92BA65BD9C}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{C9F4A40D-BA6F-439A-8EC5-0E01DD4B3FF8}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Delivery.Tests", "Delivery.Tests", "{C9F4A40D-BA6F-439A-8EC5-0E01DD4B3FF8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Delivery.Integration", "Tests\Delivery.Integration.csproj", "{38C5029C-9196-8BD2-167F-C1582545A4A2}"
 EndProject
