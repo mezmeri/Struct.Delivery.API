@@ -1,4 +1,6 @@
-﻿using Delivery.Application.Interfaces.Managers;
+﻿using Delivery.Application.Interfaces;
+using Delivery.Application.Interfaces.Managers;
+using Delivery.Application.Services.EntityEventServices;
 using Delivery.Infrastructure.Managers;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
@@ -37,5 +39,12 @@ namespace Delivery.Application
             return services;
         }
 
+        public static IServiceCollection ConfigureEntityEventServices(this IServiceCollection services)
+        {
+            services.AddTransient<IEntityEventService, ProductEventService>();
+            services.AddTransient<IEntityEventService, VariantEventService>();
+
+            return services;
+        }
     }
 }

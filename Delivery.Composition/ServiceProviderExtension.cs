@@ -10,7 +10,8 @@ namespace Delivery.Composition
         public static IServiceCollection AddApplicationDependencies(this IServiceCollection services)
         {
             return services.GetAllApplicationServices()
-                .ConfigureManagers();
+                .ConfigureManagers()
+                .ConfigureEntityEventServices();
         }
 
         public static IServiceCollection AddInfrastructureDependencies(this IServiceCollection services)
